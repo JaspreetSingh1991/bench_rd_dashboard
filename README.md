@@ -1,70 +1,140 @@
-# Getting Started with Create React App
+# Bench/RD Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React-based dashboard application for tracking and analyzing Bench/RD data from Excel files.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Two Views**: Matrix View and Details View for different data visualization
+- **Excel File Support**: Automatically reads Excel files with specific sheet requirements
+- **Status Analysis**: Calculates counts for 5 different status types based on complex business rules
+- **Grade-based Filtering**: Supports A1, A2, B1, B2, B3, B4 grade types
+- **Cross-platform**: Works as both web application and desktop application (Electron)
 
-### `npm start`
+## Status Types Analyzed
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. **Available - ML return constraint**: Counts records with "Avail_BenchRD" deployment status AND "ML Case" in any of Match 1/2/3 columns
+2. **Blocked**: Counts records with "Blocked SPE" deployment status
+3. **Client Blocked**: Counts records with "Blocked Outside SPE" deployment status
+4. **Available - Location Constraint**: Counts records with "Avail_BenchRD" deployment status AND "Yes" in Location Constraint column
+5. **Available - High Bench Ageing**: Counts records with "Avail_BenchRD" deployment status AND Aging > 90 days
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Excel File Requirements
 
-### `npm test`
+The application expects an Excel file named `Bench_RD Tracker_update.xlsx` with the following specifications:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **File Location**: Documents folder (for auto-load feature)
+- **Sheet Name**: `RD_BENCH_Tracker`
+- **Required Columns**:
+  - `Bench/RD`: Identifies if record is Bench or RD
+  - `Grade`: Grade type (A1, A2, B1, B2, B3, B4)
+  - `Deployment Status`: Current deployment status
+  - `Match 1`, `Match 2`, `Match 3`: Match information
+  - `Location Constraint`: Location constraint information
+  - `Aging`: Aging in days
 
-### `npm run build`
+## Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone or download the project
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Usage
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Web Application
+```bash
+npm start
+```
+This will start the React development server at `http://localhost:3000`
 
-### `npm run eject`
+### Desktop Application (Electron)
+```bash
+# Development mode
+npm run electron-dev
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Production build
+npm run electron-pack
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## How to Use
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. **Start the application** (web or desktop version)
+2. **Load Data** using one of the following methods:
+   - **Upload Excel File**: Click "Upload Excel File" to select and upload your Excel file
+   - **Select Excel File**: Click "Select Excel File" to browse and select an Excel file (Electron only)
+   - **Auto Load**: Click "Auto Load from Documents" to automatically load the file from Documents folder (Electron only)
+   - **Sample Data**: Click "Load Sample Data" to load demonstration data (web version)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. **View Data** in two different formats:
+   - **Matrix View**: Shows a comprehensive table with all Bench/RD types, grades, and status counts
+   - **Details View**: Shows separate cards for Bench and RD with detailed breakdowns
 
-## Learn More
+## File Structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+bench-rd-dashboard/
+├── public/
+│   ├── electron.js          # Electron main process
+│   ├── preload.js           # Electron preload script
+│   └── index.html
+├── src/
+│   ├── components/
+│   │   └── ExcelUploader.js # Excel file handling component
+│   ├── App.js               # Main application component
+│   └── index.js
+└── package.json
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Technical Details
 
-### Code Splitting
+### Dependencies
+- **React**: Frontend framework
+- **Material-UI**: UI component library
+- **XLSX**: Excel file parsing
+- **React Router**: Navigation
+- **Electron**: Desktop application framework (optional)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Business Logic
+The application implements complex business rules to categorize records:
 
-### Analyzing the Bundle Size
+1. **ML Return Constraint**: Checks for "Avail_BenchRD" status AND "ML Case" in match columns
+2. **Blocked Status**: Direct mapping from deployment status
+3. **Location Constraint**: Checks for "Avail_BenchRD" status AND location constraint
+4. **High Bench Ageing**: Checks for "Avail_BenchRD" status AND aging > 90 days
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Data Processing
+- Automatically reads Excel files from specified location
+- Validates required sheet and column structure
+- Processes data according to business rules
+- Generates real-time counts and statistics
+- Provides both matrix and detailed views
 
-### Making a Progressive Web App
+## Troubleshooting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Common Issues
 
-### Advanced Configuration
+1. **Excel file not found**: Ensure the file is named exactly `Bench_RD Tracker_update.xlsx` and located in the Documents folder
+2. **Sheet not found**: Verify the Excel file contains a sheet named `RD_BENCH_Tracker`
+3. **Missing columns**: Ensure all required columns are present in the Excel file
+4. **Permission errors**: Make sure the application has permission to access the Documents folder
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Error Messages
+- "Excel file not found in Documents folder": File doesn't exist or is in wrong location
+- "Sheet 'RD_BENCH_Tracker' not found": Wrong sheet name in Excel file
+- "Excel file is empty or has no data rows": File structure issue
 
-### Deployment
+## Development
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Adding New Status Types
+To add new status types, modify the `calculateStatusCounts` function in `App.js` and update the `statusTypes` array.
 
-### `npm run build` fails to minify
+### Modifying Business Rules
+Business rules are implemented in the `calculateStatusCounts` function. Update the conditions to match new requirements.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Styling
+The application uses Material-UI for styling. Modify the `sx` props or create custom themes as needed.
+
+## License
+
+This project is created for internal use. Please ensure compliance with your organization's policies.
