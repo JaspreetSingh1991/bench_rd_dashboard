@@ -80,7 +80,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
            record['Match 3']?.toLowerCase().includes('ml case'))
         );
         break;
-      case 'Blocked':
+      case 'Internal Blocked':
         filteredData = filteredData.filter(record => 
           record['Deployment Status'] === 'Blocked SPE'
         );
@@ -99,7 +99,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
             record['Match 3']?.toLowerCase().includes('ml case'))
         );
         break;
-      case 'Available - High Bench Ageing':
+      case 'Available - High Bench Ageing 90+':
         filteredData = filteredData.filter(record => 
           record['Deployment Status'] === 'Avail_BenchRD' && 
           Number(record['Aging']) > 90
@@ -128,7 +128,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
   // Use sample data if no data is loaded
   const dataToUse = data && data.length > 0 ? data : generateSampleData();
   const statusCounts = calculateStatusCounts(dataToUse);
-  const grades = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const grades = ['B1', 'B2', 'C1', 'C2', 'D1', 'D2'];
   
   // Ensure both Bench and RD are present with proper structure
   if (!statusCounts['Bench']) {
@@ -142,29 +142,29 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
   grades.forEach(grade => {
     if (!statusCounts['Bench'][grade]) {
       statusCounts['Bench'][grade] = {
-        'Available - ML return constraint': 0,
-        'Blocked': 0,
         'Client Blocked': 0,
+        'Internal Blocked': 0,
         'Available - Location Constraint': 0,
-        'Available - High Bench Ageing': 0
+        'Available - ML return constraint': 0,
+        'Available - High Bench Ageing 90+': 0
       };
     }
     if (!statusCounts['RD'][grade]) {
       statusCounts['RD'][grade] = {
-        'Available - ML return constraint': 0,
-        'Blocked': 0,
         'Client Blocked': 0,
+        'Internal Blocked': 0,
         'Available - Location Constraint': 0,
-        'Available - High Bench Ageing': 0
+        'Available - ML return constraint': 0,
+        'Available - High Bench Ageing 90+': 0
       };
     }
   });
   const statusTypes = [
-    'Available - ML return constraint',
-    'Blocked',
     'Client Blocked',
+    'Internal Blocked',
     'Available - Location Constraint',
-    'Available - High Bench Ageing'
+    'Available - ML return constraint',
+    'Available - High Bench Ageing 90+'
   ];
 
 
@@ -463,7 +463,12 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {Object.keys(statusCounts).map((benchRd, benchIndex) => (
+                      {Object.keys(statusCounts).sort((a, b) => {
+                        // Sort Bench first, then RD
+                        if (a === 'Bench' && b === 'RD') return -1;
+                        if (a === 'RD' && b === 'Bench') return 1;
+                        return 0;
+                      }).map((benchRd, benchIndex) => (
                         <>
                           {/* Regular status rows for this Bench/RD */}
                           {statusTypes.map((status, statusIndex) => (
@@ -508,13 +513,13 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                   switch (status) {
                                     case 'Available - ML return constraint':
                                       return '#ff9800';
-                                    case 'Blocked':
+                                    case 'Internal Blocked':
                                       return '#f44336';
                                     case 'Client Blocked':
                                       return '#ff5722';
                                     case 'Available - Location Constraint':
                                       return '#2196f3';
-                                    case 'Available - High Bench Ageing':
+                                    case 'Available - High Bench Ageing 90+':
                                       return '#9c27b0';
                                     default:
                                       return '#757575';
@@ -577,13 +582,13 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                   switch (status) {
                                     case 'Available - ML return constraint':
                                       return '#ff9800';
-                                    case 'Blocked':
+                                    case 'Internal Blocked':
                                       return '#f44336';
                                     case 'Client Blocked':
                                       return '#ff5722';
                                     case 'Available - Location Constraint':
                                       return '#2196f3';
-                                    case 'Available - High Bench Ageing':
+                                    case 'Available - High Bench Ageing 90+':
                                       return '#9c27b0';
                                     default:
                                       return '#757575';
@@ -627,7 +632,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                                record['Match 3']?.toLowerCase().includes('ml case'))
                                             );
                                             break;
-                                          case 'Blocked':
+                                          case 'Internal Blocked':
                                             filteredData = filteredData.filter(record => 
                                               record['Deployment Status'] === 'Blocked SPE'
                                             );
@@ -646,7 +651,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                                 record['Match 3']?.toLowerCase().includes('ml case'))
                                             );
                                             break;
-                                          case 'Available - High Bench Ageing':
+                                          case 'Available - High Bench Ageing 90+':
                                             filteredData = filteredData.filter(record => 
                                               record['Deployment Status'] === 'Avail_BenchRD' && 
                                               Number(record['Aging']) > 90
@@ -884,7 +889,12 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
               }}>
 
                 <Grid container spacing={1} sx={{ flex: 1, height: '100%', justifyContent: 'center' }}>
-                {['Bench', 'RD'].map(benchRd => (
+                {['Bench', 'RD'].sort((a, b) => {
+                  // Sort Bench first, then RD
+                  if (a === 'Bench' && b === 'RD') return -1;
+                  if (a === 'RD' && b === 'Bench') return 1;
+                  return 0;
+                }).map(benchRd => (
                     <Grid item xs={12} sm={5.8} key={benchRd} sx={{ height: '100%', minHeight: '220px' }}>
                       <Paper sx={{ 
                         borderRadius: 2,

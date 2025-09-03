@@ -58,7 +58,7 @@ const TrendAnalysis = ({ data }) => {
         gradeEfficiency[grade] = {
           total: 0,
           available: 0,
-          blocked: 0,
+          internalBlocked: 0,
           clientBlocked: 0,
           mlConstraint: 0,
           highAging: 0
@@ -82,7 +82,7 @@ const TrendAnalysis = ({ data }) => {
           gradeEfficiency[grade].highAging++;
         }
       } else if (record['Deployment Status'] === 'Blocked SPE') {
-        gradeEfficiency[grade].blocked++;
+        gradeEfficiency[grade].internalBlocked++;
       } else if (record['Deployment Status'] === 'Blocked Outside SPE') {
         gradeEfficiency[grade].clientBlocked++;
       }
@@ -94,14 +94,14 @@ const TrendAnalysis = ({ data }) => {
       utilization: Math.round((stats.available / stats.total) * 100),
       mlConstraintRate: Math.round((stats.mlConstraint / stats.total) * 100),
       highAgingRate: Math.round((stats.highAging / stats.total) * 100),
-      blockedRate: Math.round((stats.blocked / stats.total) * 100)
+      internalBlockedRate: Math.round((stats.internalBlocked / stats.total) * 100)
     }));
 
     // Bench vs RD efficiency
     const benchRdEfficiency = data.reduce((acc, record) => {
       const type = record['Bench/RD'];
       if (!acc[type]) {
-        acc[type] = { total: 0, available: 0, blocked: 0, clientBlocked: 0 };
+        acc[type] = { total: 0, available: 0, internalBlocked: 0, clientBlocked: 0 };
       }
       
       acc[type].total++;
@@ -109,7 +109,7 @@ const TrendAnalysis = ({ data }) => {
       if (record['Deployment Status'] === 'Avail_BenchRD') {
         acc[type].available++;
       } else if (record['Deployment Status'] === 'Blocked SPE') {
-        acc[type].blocked++;
+        acc[type].internalBlocked++;
       } else if (record['Deployment Status'] === 'Blocked Outside SPE') {
         acc[type].clientBlocked++;
       }
@@ -117,12 +117,19 @@ const TrendAnalysis = ({ data }) => {
       return acc;
     }, {});
 
-    const benchRdData = Object.entries(benchRdEfficiency).map(([type, stats]) => ({
-      type,
-      utilization: Math.round((stats.available / stats.total) * 100),
-      blockedRate: Math.round((stats.blocked / stats.total) * 100),
-      clientBlockedRate: Math.round((stats.clientBlocked / stats.total) * 100)
-    }));
+    const benchRdData = Object.entries(benchRdEfficiency)
+      .sort(([a], [b]) => {
+        // Sort Bench first, then RD
+        if (a === 'Bench' && b === 'RD') return -1;
+        if (a === 'RD' && b === 'Bench') return 1;
+        return 0;
+      })
+      .map(([type, stats]) => ({
+        type,
+        utilization: Math.round((stats.available / stats.total) * 100),
+        internalBlockedRate: Math.round((stats.internalBlocked / stats.total) * 100),
+        clientBlockedRate: Math.round((stats.clientBlocked / stats.total) * 100)
+      }));
 
     return {
       agingTrends: Object.values(agingTrends),
@@ -269,7 +276,7 @@ const TrendAnalysis = ({ data }) => {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="utilization" fill="#00C49F" name="Utilization %" />
-                <Bar dataKey="blockedRate" fill="#FF8042" name="Blocked %" />
+                <Bar dataKey="internalBlockedRate" fill="#FF8042" name="Internal Blocked %" />
                 <Bar dataKey="clientBlockedRate" fill="#FFBB28" name="Client Blocked %" />
               </BarChart>
             </ResponsiveContainer>

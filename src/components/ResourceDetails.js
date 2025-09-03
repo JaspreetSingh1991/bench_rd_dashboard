@@ -89,7 +89,12 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((record, index) => (
+              {data.sort((a, b) => {
+                // Sort Bench first, then RD
+                if (a['Bench/RD'] === 'Bench' && b['Bench/RD'] === 'RD') return -1;
+                if (a['Bench/RD'] === 'RD' && b['Bench/RD'] === 'Bench') return 1;
+                return 0;
+              }).map((record, index) => (
                 <TableRow key={index} hover>
                   <TableCell>{record['Bench/RD']}</TableCell>
                   <TableCell>{record['Grade']}</TableCell>

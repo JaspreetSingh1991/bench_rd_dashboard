@@ -97,6 +97,13 @@ ipcMain.handle('load-excel-file', async () => {
       return obj;
     });
     
+    // Clean up memory
+    workbook = null;
+    worksheet = null;
+    jsonData = null;
+    headers = null;
+    rows = null;
+    
     return processedData;
   } catch (error) {
     throw error;
@@ -142,6 +149,13 @@ ipcMain.handle('select-excel-file', async () => {
       });
       return obj;
     });
+    
+    // Clean up memory
+    workbook = null;
+    worksheet = null;
+    jsonData = null;
+    headers = null;
+    rows = null;
     
     return processedData;
   } catch (error) {

@@ -23,6 +23,13 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
       };
       
       window.electronAPI.onAutoLoadExcel(handleAutoLoadEvent);
+      
+      // Cleanup function to remove event listener
+      return () => {
+        if (window.electronAPI && window.electronAPI.removeAutoLoadExcel) {
+          window.electronAPI.removeAutoLoadExcel(handleAutoLoadEvent);
+        }
+      };
     }
   }, []);
 
@@ -128,6 +135,12 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
             });
             return obj;
           });
+          
+          // Clean up memory
+          data = null;
+          workbook = null;
+          worksheet = null;
+          jsonData = null;
           
           resolve(processedData);
         } catch (err) {

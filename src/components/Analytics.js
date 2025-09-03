@@ -41,7 +41,7 @@ const Analytics = ({ data }) => {
       benchCount: data.filter(record => record['Bench/RD'] === 'Bench').length,
       rdCount: data.filter(record => record['Bench/RD'] === 'RD').length,
       availableCount: data.filter(record => record['Deployment Status'] === 'Avail_BenchRD').length,
-      blockedCount: data.filter(record => record['Deployment Status'] === 'Blocked SPE').length,
+      internalBlockedCount: data.filter(record => record['Deployment Status'] === 'Blocked SPE').length,
       clientBlockedCount: data.filter(record => record['Deployment Status'] === 'Blocked Outside SPE').length,
       mlReturnConstraintCount: data.filter(record => 
         record['Deployment Status'] === 'Avail_BenchRD' && 
@@ -106,7 +106,7 @@ const Analytics = ({ data }) => {
 
   const statusData = [
     { name: 'Available', value: analytics.availableCount, color: '#00C49F' },
-    { name: 'Blocked SPE', value: analytics.blockedCount, color: '#FF8042' },
+    { name: 'Internal Blocked', value: analytics.internalBlockedCount, color: '#FF8042' },
     { name: 'Client Blocked', value: analytics.clientBlockedCount, color: '#FFBB28' }
   ];
 
@@ -123,7 +123,7 @@ const Analytics = ({ data }) => {
   const statusByGradeData = Object.entries(analytics.statusByGrade).map(([grade, statuses]) => ({
     grade,
     available: statuses['Avail_BenchRD'] || 0,
-    blocked: statuses['Blocked SPE'] || 0,
+    internalBlocked: statuses['Blocked SPE'] || 0,
     clientBlocked: statuses['Blocked Outside SPE'] || 0
   }));
 
@@ -187,7 +187,7 @@ const Analytics = ({ data }) => {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
-                High Aging (>90 days)
+                High Aging (&gt;90 days)
               </Typography>
               <Typography variant="h4" color="error.main">
                 {analytics.highAgingCount}
@@ -269,7 +269,7 @@ const Analytics = ({ data }) => {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="available" stackId="a" fill="#00C49F" name="Available" />
-                <Bar dataKey="blocked" stackId="a" fill="#FF8042" name="Blocked SPE" />
+                <Bar dataKey="internalBlocked" stackId="a" fill="#FF8042" name="Internal Blocked" />
                 <Bar dataKey="clientBlocked" stackId="a" fill="#FFBB28" name="Client Blocked" />
               </BarChart>
             </ResponsiveContainer>

@@ -3,12 +3,11 @@
 export const calculateStatusCounts = (data) => {
   const counts = {};
   
-  // Debug: Log the data being processed
-  console.log('Processing data:', data.length, 'records');
-  console.log('Sample record:', data[0]);
-  console.log('All Bench/RD values:', data.map(r => r['Bench/RD']).filter((v, i, a) => a.indexOf(v) === i));
+  // Memory optimization: Process data in chunks if it's very large
+  const CHUNK_SIZE = 1000;
   
-  data.forEach(record => {
+  const processChunk = (chunk) => {
+    chunk.forEach(record => {
     const benchRd = record['Bench/RD'];
     const grade = record['Grade'];
     const deploymentStatus = record['Deployment Status'];
@@ -18,28 +17,18 @@ export const calculateStatusCounts = (data) => {
     const locationConstraint = record['Location Constraint'] || '';
     const aging = Number(record['Aging']) || 0;
     
-    // Debug: Log all records with aging > 90 to see what's happening
-    if (aging > 90) {
-      console.log('Record with aging > 90 found:', {
-        benchRd,
-        grade,
-        deploymentStatus,
-        aging,
-        agingType: typeof aging,
-        isAvailable: deploymentStatus === 'Avail_BenchRD'
-      });
-    }
+    // Process aging data without debug logging for better performance
     
     if (!counts[benchRd]) {
       counts[benchRd] = {};
     }
     if (!counts[benchRd][grade]) {
       counts[benchRd][grade] = {
-        'Available - ML return constraint': 0,
-        'Blocked': 0,
         'Client Blocked': 0,
+        'Internal Blocked': 0,
         'Available - Location Constraint': 0,
-        'Available - High Bench Ageing': 0
+        'Available - ML return constraint': 0,
+        'Available - High Bench Ageing 90+': 0
       };
     }
     
@@ -53,20 +42,12 @@ export const calculateStatusCounts = (data) => {
       // Count by Grade - same grade data
       counts[benchRd][grade]['Available - ML return constraint']++;
       
-      // Debug: Log when ML return constraint is found
-      console.log('ML Return Constraint found for:', {
-        benchRd,
-        grade,
-        deploymentStatus,
-        match1,
-        match2,
-        match3
-      });
+      // ML return constraint found - no debug logging for performance
     }
     
-    // Check for Blocked
+    // Check for Internal Blocked
     if (deploymentStatus === 'Blocked SPE') {
-      counts[benchRd][grade]['Blocked']++;
+      counts[benchRd][grade]['Internal Blocked']++;
     }
     
     // Check for Client Blocked
@@ -81,35 +62,26 @@ export const calculateStatusCounts = (data) => {
       counts[benchRd][grade]['Available - Location Constraint']++;
     }
     
-    // Check for Available - High Bench Ageing
-    console.log('Checking High Bench Ageing for:', {
-      benchRd,
-      grade,
-      deploymentStatus,
-      aging,
-      deploymentStatusMatch: deploymentStatus === 'Avail_BenchRD',
-      agingMatch: aging > 90,
-      bothConditions: deploymentStatus === 'Avail_BenchRD' && aging > 90
-    });
+    // Check for Available - High Bench Ageing 90+
     
     if (deploymentStatus === 'Avail_BenchRD' && aging > 90) {
       // Count by Bench/RD and Grade - records with aging > 90 days
-      counts[benchRd][grade]['Available - High Bench Ageing']++;
+      counts[benchRd][grade]['Available - High Bench Ageing 90+']++;
       
-      // Debug: Log when High Bench Ageing is found
-      console.log('High Bench Ageing found for:', {
-        benchRd,
-        grade,
-        deploymentStatus,
-        aging
-      });
+      // High Bench Ageing found - no debug logging for performance
     }
-  });
+    });
+  };
   
-  console.log('Final counts structure:', counts);
-  console.log('Counts keys:', Object.keys(counts));
-  console.log('Bench data:', counts['Bench']);
-  console.log('RD data:', counts['RD']);
+  // Process data in chunks for large datasets
+  if (data.length > CHUNK_SIZE) {
+    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+      const chunk = data.slice(i, i + CHUNK_SIZE);
+      processChunk(chunk);
+    }
+  } else {
+    processChunk(data);
+  }
   
   return counts;
 };
@@ -117,7 +89,7 @@ export const calculateStatusCounts = (data) => {
 export const generateSampleData = () => {
   // Generate sample data that matches the expected structure
   const benchRdTypes = ['Bench', 'RD'];
-  const grades = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const grades = ['B1', 'B2', 'C1', 'C2', 'D1', 'D2'];
   const deploymentStatuses = [
     'Avail_BenchRD',
     'Blocked SPE',
