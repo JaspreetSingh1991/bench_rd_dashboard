@@ -8,13 +8,11 @@ export const calculateStatusCounts = (data) => {
   
   const processChunk = (chunk) => {
     chunk.forEach(record => {
-    const benchRd = record['Bench/RD'];
+    const originalBenchRd = record['Bench/RD'];
+    // Map ML Return to Bench to avoid creating separate rows
+    const benchRd = originalBenchRd && originalBenchRd.toLowerCase().includes('ml return') ? 'Bench' : originalBenchRd;
     const grade = record['Grade'];
     const deploymentStatus = record['Deployment Status'];
-    const match1 = record['Match 1'] || '';
-    const match2 = record['Match 2'] || '';
-    const match3 = record['Match 3'] || '';
-    const locationConstraint = record['Location Constraint'] || '';
     const aging = Number(record['Aging']) || 0;
     
     // Process aging data without debug logging for better performance
@@ -33,38 +31,38 @@ export const calculateStatusCounts = (data) => {
     }
     
     // Check for Available - ML return constraint
-    const isMLConstraint = deploymentStatus === 'Avail_BenchRD' && 
-        (match1.toLowerCase().includes('ml case') || 
-         match2.toLowerCase().includes('ml case') || 
-         match3.toLowerCase().includes('ml case'));
+    const isMLReturn = originalBenchRd && originalBenchRd.toLowerCase().includes('ml return');
+    const isMLDeploymentStatusAvailable = deploymentStatus && deploymentStatus.toLowerCase().includes('available');
+    const isMLConstraint = isMLReturn && isMLDeploymentStatusAvailable;
     
     if (isMLConstraint) {
-      // Count by Grade - same grade data
+      // ML Return resources are already mapped to Bench row above, so count them here
       counts[benchRd][grade]['Available - ML return constraint']++;
-      
-      // ML return constraint found - no debug logging for performance
     }
     
-    // Check for Internal Blocked
-    if (deploymentStatus === 'Blocked SPE') {
+    // Check for Internal Blocked - case insensitive check for 'Internal Blocked' in Deployment Status
+    if (deploymentStatus && deploymentStatus.toLowerCase().includes('internal blocked')) {
       counts[benchRd][grade]['Internal Blocked']++;
     }
     
-    // Check for Client Blocked
-    if (deploymentStatus === 'Blocked Outside SPE') {
+    // Check for Client Blocked - case insensitive check for 'Client Blocked' in Deployment Status
+    if (deploymentStatus && deploymentStatus.toLowerCase().includes('client blocked')) {
       counts[benchRd][grade]['Client Blocked']++;
     }
     
-    // Check for Available - Location Constraint (exclude ML constraint to avoid duplication)
-    if (deploymentStatus === 'Avail_BenchRD' && 
-        locationConstraint.toLowerCase() === 'yes' && 
-        !isMLConstraint) {
+    // Check for Available - Location Constraint - check Relocation is empty or '-' and Deployment Status contains 'Available'
+    const relocation = (record['Relocation'] || '').toString().trim();
+    const isRelocationEmpty = relocation === '' || relocation === '-';
+    const isDeploymentStatusAvailable = deploymentStatus && deploymentStatus.trim().toLowerCase().includes('available');
+    
+    if (isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint) {
       counts[benchRd][grade]['Available - Location Constraint']++;
     }
     
     // Check for Available - High Bench Ageing 90+
+    const isHighAgingDeploymentStatusAvailable = deploymentStatus && deploymentStatus.toLowerCase().includes('available');
     
-    if (deploymentStatus === 'Avail_BenchRD' && aging > 90) {
+    if (isHighAgingDeploymentStatusAvailable && aging > 90) {
       // Count by Bench/RD and Grade - records with aging > 90 days
       counts[benchRd][grade]['Available - High Bench Ageing 90+']++;
       

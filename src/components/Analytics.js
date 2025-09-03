@@ -38,25 +38,33 @@ const Analytics = ({ data }) => {
   const calculateAnalytics = () => {
     const analytics = {
       totalRecords: data.length,
-      benchCount: data.filter(record => record['Bench/RD'] === 'Bench').length,
+      benchCount: data.filter(record => {
+        const benchRd = record['Bench/RD'];
+        return benchRd === 'Bench' || (benchRd && benchRd.toLowerCase().includes('ml return'));
+      }).length,
       rdCount: data.filter(record => record['Bench/RD'] === 'RD').length,
       availableCount: data.filter(record => record['Deployment Status'] === 'Avail_BenchRD').length,
-      internalBlockedCount: data.filter(record => record['Deployment Status'] === 'Blocked SPE').length,
-      clientBlockedCount: data.filter(record => record['Deployment Status'] === 'Blocked Outside SPE').length,
-      mlReturnConstraintCount: data.filter(record => 
-        record['Deployment Status'] === 'Avail_BenchRD' && 
-        (record['Match 1']?.toLowerCase().includes('ml case') || 
-         record['Match 2']?.toLowerCase().includes('ml case') || 
-         record['Match 3']?.toLowerCase().includes('ml case'))
-      ).length,
-      highAgingCount: data.filter(record => 
-        record['Deployment Status'] === 'Avail_BenchRD' && 
-        Number(record['Aging']) > 90
-      ).length,
-      locationConstraintCount: data.filter(record => 
-        record['Deployment Status'] === 'Avail_BenchRD' && 
-        record['Location Constraint']?.toLowerCase() === 'yes'
-      ).length
+      internalBlockedCount: data.filter(record => record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')).length,
+      clientBlockedCount: data.filter(record => record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')).length,
+      mlReturnConstraintCount: data.filter(record => {
+        const benchRd = record['Bench/RD'] || '';
+        const deploymentStatus = record['Deployment Status'] || '';
+        const isMLReturn = benchRd.toLowerCase().includes('ml return');
+        const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+        return isMLReturn && isDeploymentStatusAvailable;
+      }).length,
+      highAgingCount: data.filter(record => {
+        const deploymentStatus = record['Deployment Status'] || '';
+        const aging = Number(record['Aging']) || 0;
+        const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+        return isDeploymentStatusAvailable && aging > 90;
+      }).length,
+      locationConstraintCount: data.filter(record => {
+        const relocation = (record['Relocation'] || '').toString().trim();
+        const isRelocationEmpty = relocation === '' || relocation === '-';
+        const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
+        return isDeploymentStatusAvailable && isRelocationEmpty;
+      }).length
     };
 
     // Grade distribution
@@ -123,8 +131,8 @@ const Analytics = ({ data }) => {
   const statusByGradeData = Object.entries(analytics.statusByGrade).map(([grade, statuses]) => ({
     grade,
     available: statuses['Avail_BenchRD'] || 0,
-    internalBlocked: statuses['Blocked SPE'] || 0,
-    clientBlocked: statuses['Blocked Outside SPE'] || 0
+    internalBlocked: Object.keys(statuses).filter(key => key.toLowerCase().includes('internal blocked')).reduce((sum, key) => sum + (statuses[key] || 0), 0),
+    clientBlocked: Object.keys(statuses).filter(key => key.toLowerCase().includes('client blocked')).reduce((sum, key) => sum + (statuses[key] || 0), 0)
   }));
 
   return (

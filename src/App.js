@@ -18,7 +18,7 @@ import {
   Grid,
   Alert
 } from '@mui/material';
-import ExcelUploader from './components/ExcelUploader';
+
 import Analytics from './components/Analytics';
 import TrendAnalysis from './components/TrendAnalysis';
 import ResourceDetails from './components/ResourceDetails';
@@ -52,58 +52,68 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
     }
   }, [activeView, dataLoaded]);
 
-  const handleDataLoaded = (excelData) => {
-    onDataLoaded(excelData);
-    setDataLoaded(true);
-  };
 
-  const handleError = (errorMessage) => {
-    onError(errorMessage);
-    setDataLoaded(false);
-  };
 
   const handleCountClick = (benchRd, grade, status, count) => {
     if (count === 0) return;
     
-    let filteredData = data.filter(record => 
-      record['Bench/RD'] === benchRd && 
-      record['Grade'] === grade
-    );
+    let filteredData = data.filter(record => {
+      const recordBenchRd = record['Bench/RD'];
+      const recordGrade = record['Grade'];
+      
+      // Check grade match first
+      if (recordGrade !== grade) return false;
+      
+      // Check Bench/RD match with special handling for Bench row
+      if (benchRd === 'Bench') {
+        // For Bench row, include both Bench and ML Return records
+        return recordBenchRd === 'Bench' || 
+               (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+      } else {
+        // For other rows, use exact match
+        return recordBenchRd === benchRd;
+      }
+    });
 
     // Apply status-specific filters
     switch (status) {
       case 'Available - ML return constraint':
-        filteredData = filteredData.filter(record => 
-          record['Deployment Status'] === 'Avail_BenchRD' && 
-          (record['Match 1']?.toLowerCase().includes('ml case') || 
-           record['Match 2']?.toLowerCase().includes('ml case') || 
-           record['Match 3']?.toLowerCase().includes('ml case'))
-        );
+        filteredData = filteredData.filter(record => {
+          const benchRd = record['Bench/RD'] || '';
+          const deploymentStatus = record['Deployment Status'] || '';
+          const isMLReturn = benchRd.toLowerCase().includes('ml return');
+          const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+          return isMLReturn && isDeploymentStatusAvailable;
+        });
         break;
       case 'Internal Blocked':
         filteredData = filteredData.filter(record => 
-          record['Deployment Status'] === 'Blocked SPE'
+          record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')
         );
         break;
       case 'Client Blocked':
         filteredData = filteredData.filter(record => 
-          record['Deployment Status'] === 'Blocked Outside SPE'
+          record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')
         );
         break;
       case 'Available - Location Constraint':
-        filteredData = filteredData.filter(record => 
-          record['Deployment Status'] === 'Avail_BenchRD' && 
-          record['Location Constraint']?.toLowerCase() === 'yes' &&
-          !(record['Match 1']?.toLowerCase().includes('ml case') || 
-            record['Match 2']?.toLowerCase().includes('ml case') || 
-            record['Match 3']?.toLowerCase().includes('ml case'))
-        );
+        filteredData = filteredData.filter(record => {
+          const relocation = (record['Relocation'] || '').toString().trim();
+          const isRelocationEmpty = relocation === '' || relocation === '-';
+          const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
+          const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
+            (record['Deployment Status'] || '').toLowerCase().includes('available');
+          
+          return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
+        });
         break;
       case 'Available - High Bench Ageing 90+':
-        filteredData = filteredData.filter(record => 
-          record['Deployment Status'] === 'Avail_BenchRD' && 
-          Number(record['Aging']) > 90
-        );
+        filteredData = filteredData.filter(record => {
+          const deploymentStatus = record['Deployment Status'] || '';
+          const aging = Number(record['Aging']) || 0;
+          const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+          return isDeploymentStatusAvailable && aging > 90;
+        });
         break;
       default:
         break;
@@ -578,23 +588,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                   grandTotal += statusCounts[benchRd][grade]?.[status] || 0;
                                 });
                                 
-                                const getStatusColor = (status) => {
-                                  switch (status) {
-                                    case 'Available - ML return constraint':
-                                      return '#ff9800';
-                                    case 'Internal Blocked':
-                                      return '#f44336';
-                                    case 'Client Blocked':
-                                      return '#ff5722';
-                                    case 'Available - Location Constraint':
-                                      return '#2196f3';
-                                    case 'Available - High Bench Ageing 90+':
-                                      return '#9c27b0';
-                                    default:
-                                      return '#757575';
-                                  }
-                                };
-                                
                                 return (
                                   <TableCell 
                                     align="center"
@@ -618,44 +611,57 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                     onClick={() => {
                                       if (grandTotal > 0) {
                                         // Show all records for this Bench/RD + Status across all grades
-                                        let filteredData = data.filter(record => 
-                                          record['Bench/RD'] === benchRd
-                                        );
+                                        let filteredData = data.filter(record => {
+                                          const recordBenchRd = record['Bench/RD'];
+                                          if (benchRd === 'Bench') {
+                                            // For Bench row, include both Bench and ML Return records
+                                            return recordBenchRd === 'Bench' || 
+                                                   (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+                                          } else {
+                                            // For other rows, use exact match
+                                            return recordBenchRd === benchRd;
+                                          }
+                                        });
 
                                         // Apply status-specific filters
                                         switch (status) {
                                           case 'Available - ML return constraint':
-                                            filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] === 'Avail_BenchRD' && 
-                                              (record['Match 1']?.toLowerCase().includes('ml case') || 
-                                               record['Match 2']?.toLowerCase().includes('ml case') || 
-                                               record['Match 3']?.toLowerCase().includes('ml case'))
-                                            );
+                                            filteredData = filteredData.filter(record => {
+                                              const benchRd = record['Bench/RD'] || '';
+                                              const deploymentStatus = record['Deployment Status'] || '';
+                                              const isMLReturn = benchRd.toLowerCase().includes('ml return');
+                                              const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+                                              return isMLReturn && isDeploymentStatusAvailable;
+                                            });
                                             break;
                                           case 'Internal Blocked':
                                             filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] === 'Blocked SPE'
+                                              record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')
                                             );
                                             break;
                                           case 'Client Blocked':
                                             filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] === 'Blocked Outside SPE'
+                                              record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')
                                             );
                                             break;
                                           case 'Available - Location Constraint':
-                                            filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] === 'Avail_BenchRD' && 
-                                              record['Location Constraint']?.toLowerCase() === 'yes' &&
-                                              !(record['Match 1']?.toLowerCase().includes('ml case') || 
-                                                record['Match 2']?.toLowerCase().includes('ml case') || 
-                                                record['Match 3']?.toLowerCase().includes('ml case'))
-                                            );
+                                            filteredData = filteredData.filter(record => {
+                                              const relocation = (record['Relocation'] || '').toString().trim();
+                                              const isRelocationEmpty = relocation === '' || relocation === '-';
+                                              const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
+                                              const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
+                                                (record['Deployment Status'] || '').toLowerCase().includes('available');
+                                              
+                                              return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
+                                            });
                                             break;
                                           case 'Available - High Bench Ageing 90+':
-                                            filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] === 'Avail_BenchRD' && 
-                                              Number(record['Aging']) > 90
-                                            );
+                                            filteredData = filteredData.filter(record => {
+                                              const deploymentStatus = record['Deployment Status'] || '';
+                                              const aging = Number(record['Aging']) || 0;
+                                              const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+                                              return isDeploymentStatusAvailable && aging > 90;
+                                            });
                                             break;
                                           default:
                                             break;

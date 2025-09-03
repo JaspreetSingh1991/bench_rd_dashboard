@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Button, 
@@ -14,45 +14,7 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Auto-load Excel file when Electron app starts
-  useEffect(() => {
-    if (window.electronAPI) {
-      const handleAutoLoadEvent = async () => {
-        console.log('Auto-loading Excel file...');
-        await handleAutoLoad();
-      };
-      
-      window.electronAPI.onAutoLoadExcel(handleAutoLoadEvent);
-      
-      // Cleanup function to remove event listener
-      return () => {
-        if (window.electronAPI && window.electronAPI.removeAutoLoadExcel) {
-          window.electronAPI.removeAutoLoadExcel(handleAutoLoadEvent);
-        }
-      };
-    }
-  }, []);
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await readExcelFile(file);
-      onDataLoaded(data);
-    } catch (err) {
-      const errorMessage = `Error reading Excel file: ${err.message}`;
-      setError(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAutoLoad = async () => {
+  const handleAutoLoad = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -73,24 +35,39 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [onDataLoaded, onError]);
 
-  const handleSelectFile = async () => {
+  // Auto-load Excel file when Electron app starts
+  useEffect(() => {
+    if (window.electronAPI) {
+      const handleAutoLoadEvent = async () => {
+        console.log('Auto-loading Excel file...');
+        await handleAutoLoad();
+      };
+      
+      window.electronAPI.onAutoLoadExcel(handleAutoLoadEvent);
+      
+      // Cleanup function to remove event listener
+      return () => {
+        if (window.electronAPI && window.electronAPI.removeAutoLoadExcel) {
+          window.electronAPI.removeAutoLoadExcel(handleAutoLoadEvent);
+        }
+      };
+    }
+  }, [handleAutoLoad]);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      if (window.electronAPI) {
-        const data = await window.electronAPI.selectExcelFile();
-        if (data) {
-          onDataLoaded(data);
-        }
-      } else {
-        // For web version, trigger file input
-        document.getElementById('file-input').click();
-      }
+      const data = await readExcelFile(file);
+      onDataLoaded(data);
     } catch (err) {
-      const errorMessage = `Error selecting file: ${err.message}`;
+      const errorMessage = `Error reading Excel file: ${err.message}`;
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -136,11 +113,7 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
             return obj;
           });
           
-          // Clean up memory
-          data = null;
-          workbook = null;
-          worksheet = null;
-          jsonData = null;
+          // Clean up memory - variables will be garbage collected automatically
           
           resolve(processedData);
         } catch (err) {

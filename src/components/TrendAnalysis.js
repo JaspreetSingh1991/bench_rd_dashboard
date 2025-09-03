@@ -33,7 +33,7 @@ const TrendAnalysis = ({ data }) => {
   const calculateTrends = () => {
     // Aging trend analysis
     const agingTrends = data
-      .filter(record => record['Deployment Status'] === 'Avail_BenchRD')
+      .filter(record => (record['Deployment Status'] || '').toLowerCase().includes('available'))
       .reduce((acc, record) => {
         const aging = Number(record['Aging']) || 0;
         const ageGroup = aging <= 30 ? '0-30' : 
@@ -67,13 +67,13 @@ const TrendAnalysis = ({ data }) => {
       
       gradeEfficiency[grade].total++;
       
-      if (record['Deployment Status'] === 'Avail_BenchRD') {
+      if ((record['Deployment Status'] || '').toLowerCase().includes('available')) {
         gradeEfficiency[grade].available++;
         
         // Check ML constraints
-        if (record['Match 1']?.toLowerCase().includes('ml case') || 
-            record['Match 2']?.toLowerCase().includes('ml case') || 
-            record['Match 3']?.toLowerCase().includes('ml case')) {
+        const isMLReturn = (record['Bench/RD'] || '').toLowerCase().includes('ml return');
+        const isDeploymentStatusAvailable = (record['Deployment Status'] || '').toLowerCase().includes('available');
+        if (isMLReturn && isDeploymentStatusAvailable) {
           gradeEfficiency[grade].mlConstraint++;
         }
         
@@ -81,9 +81,9 @@ const TrendAnalysis = ({ data }) => {
         if (Number(record['Aging']) > 90) {
           gradeEfficiency[grade].highAging++;
         }
-      } else if (record['Deployment Status'] === 'Blocked SPE') {
+      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')) {
         gradeEfficiency[grade].internalBlocked++;
-      } else if (record['Deployment Status'] === 'Blocked Outside SPE') {
+      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')) {
         gradeEfficiency[grade].clientBlocked++;
       }
     });
@@ -99,18 +99,20 @@ const TrendAnalysis = ({ data }) => {
 
     // Bench vs RD efficiency
     const benchRdEfficiency = data.reduce((acc, record) => {
-      const type = record['Bench/RD'];
+      const originalType = record['Bench/RD'];
+      // Map ML Return to Bench to avoid separate categories
+      const type = originalType && originalType.toLowerCase().includes('ml return') ? 'Bench' : originalType;
       if (!acc[type]) {
         acc[type] = { total: 0, available: 0, internalBlocked: 0, clientBlocked: 0 };
       }
       
       acc[type].total++;
       
-      if (record['Deployment Status'] === 'Avail_BenchRD') {
+      if ((record['Deployment Status'] || '').toLowerCase().includes('available')) {
         acc[type].available++;
-      } else if (record['Deployment Status'] === 'Blocked SPE') {
+      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')) {
         acc[type].internalBlocked++;
-      } else if (record['Deployment Status'] === 'Blocked Outside SPE') {
+      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')) {
         acc[type].clientBlocked++;
       }
       
@@ -143,12 +145,17 @@ const TrendAnalysis = ({ data }) => {
   // Calculate insights
   const insights = {
     totalResources: data.length,
-    availableResources: data.filter(r => r['Deployment Status'] === 'Avail_BenchRD').length,
-    utilizationRate: Math.round((data.filter(r => r['Deployment Status'] === 'Avail_BenchRD').length / data.length) * 100),
-    avgAging: Math.round(data.filter(r => r['Deployment Status'] === 'Avail_BenchRD')
+    availableResources: data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length,
+    utilizationRate: Math.round((data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length / data.length) * 100),
+    avgAging: Math.round(data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available'))
       .reduce((sum, r) => sum + (Number(r['Aging']) || 0), 0) / 
-      data.filter(r => r['Deployment Status'] === 'Avail_BenchRD').length || 0),
-    highAgingCount: data.filter(r => r['Deployment Status'] === 'Avail_BenchRD' && Number(r['Aging']) > 90).length
+      data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length || 0),
+    highAgingCount: data.filter(r => {
+      const deploymentStatus = r['Deployment Status'] || '';
+      const aging = Number(r['Aging']) || 0;
+      const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
+      return isDeploymentStatusAvailable && aging > 90;
+    }).length
   };
 
   return (
