@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as XLSX from 'xlsx';
+import { FileUploadOutlined } from '@mui/icons-material';
 // No sample data import needed
 
 const ExcelUploader = ({ onDataLoaded, onError }) => {
@@ -131,17 +132,6 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
           className="btn btn-outline"
           onClick={handleAutoLoad}
           disabled={loading}
-          style={{ 
-            padding: '8px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-            border: '1px solid var(--primary-500)',
-            backgroundColor: 'transparent',
-            color: 'var(--primary-500)',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease-in-out'
-          }}
         >
           🔄 Auto Load
         </button>
@@ -159,19 +149,9 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
         className="btn btn-primary"
         onClick={() => document.getElementById('file-input').click()}
         disabled={loading}
-        style={{ 
-          padding: '8px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-          border: '1px solid var(--primary-500)',
-          backgroundColor: 'var(--primary-500)',
-          color: 'white',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          transition: 'all 0.15s ease-in-out'
-        }}
       >
-        📁 Upload Excel
+        <FileUploadOutlined className="upload-icon" />
+        Upload Excel
       </button>
       
       {loading && (

@@ -113,6 +113,7 @@ export const generateSampleData = () => {
         const aging = Math.floor(Math.random() * 120) + 30; // 30-150 days
         
         sampleData.push({
+          'Name': `Resource_${benchRd}_${grade}_${i + 1}`,
           'Bench/RD': benchRd,
           'Grade': grade,
           'Deployment Status': deploymentStatus,
@@ -121,7 +122,8 @@ export const generateSampleData = () => {
           'Match 3': match3,
           'Location Constraint': locationConstraint,
           'Relocation': locationConstraint === 'Yes' ? 'Yes' : '', // Empty for Location Constraint logic
-          'Aging': aging
+          'Aging': aging,
+          'Location': `Location_${Math.floor(Math.random() * 5) + 1}`
         });
       }
     });
@@ -134,6 +136,7 @@ export const generateSampleData = () => {
     for (let i = 0; i < mlRecordCount; i++) {
       const aging = Math.floor(Math.random() * 120) + 30;
       sampleData.push({
+        'Name': `ML_Resource_${grade}_${i + 1}`,
         'Bench/RD': 'ML Return - Bench',
         'Grade': grade,
         'Deployment Status': 'Available - ML Return Constraint',
@@ -142,7 +145,8 @@ export const generateSampleData = () => {
         'Match 3': 'ML Case',
         'Location Constraint': 'No',
         'Relocation': '', // Empty for ML return constraint
-        'Aging': aging
+        'Aging': aging,
+        'Location': `Location_${Math.floor(Math.random() * 5) + 1}`
       });
     }
   });

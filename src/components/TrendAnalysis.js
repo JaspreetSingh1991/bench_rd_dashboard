@@ -1,13 +1,5 @@
 import React from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent
-} from '@mui/material';
-import {
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,21 +7,33 @@ import {
   Legend,
   ResponsiveContainer,
   BarChart,
-  Bar
+  Bar,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
+  ComposedChart,
+  PieChart,
+  Pie,
+  Cell,
+  ScatterChart,
+  Scatter
 } from 'recharts';
 
 const TrendAnalysis = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <Paper sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          No data available for trend analysis
-        </Typography>
-      </Paper>
+      <div className="trends-container">
+        <div className="trends-empty-state">
+          <div className="trends-empty-icon">📈</div>
+          <h3>No Data Available</h3>
+          <p>Upload an Excel file to view trend analysis</p>
+        </div>
+      </div>
     );
   }
 
-  // Calculate trend data
+  // Enhanced trend calculations
   const calculateTrends = () => {
     // Aging trend analysis
     const agingTrends = data
@@ -54,303 +58,464 @@ const TrendAnalysis = ({ data }) => {
     const gradeEfficiency = {};
     data.forEach(record => {
       const grade = record['Grade'];
+      const isAvailable = (record['Deployment Status'] || '').toLowerCase().includes('available');
+      
       if (!gradeEfficiency[grade]) {
-        gradeEfficiency[grade] = {
-          total: 0,
-          available: 0,
-          internalBlocked: 0,
-          clientBlocked: 0,
-          mlConstraint: 0,
-          highAging: 0
-        };
+        gradeEfficiency[grade] = { total: 0, available: 0, blocked: 0, avgAging: 0, agingTotal: 0 };
       }
       
       gradeEfficiency[grade].total++;
-      
-      if ((record['Deployment Status'] || '').toLowerCase().includes('available')) {
+      if (isAvailable) {
         gradeEfficiency[grade].available++;
-        
-        // Check ML constraints
-        const isMLReturn = (record['Bench/RD'] || '').toLowerCase().includes('ml return');
-        const isDeploymentStatusAvailable = (record['Deployment Status'] || '').toLowerCase().includes('available');
-        if (isMLReturn && isDeploymentStatusAvailable) {
-          gradeEfficiency[grade].mlConstraint++;
-        }
-        
-        // Check high aging
-        if (Number(record['Aging']) > 90) {
-          gradeEfficiency[grade].highAging++;
-        }
-      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')) {
-        gradeEfficiency[grade].internalBlocked++;
-      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')) {
-        gradeEfficiency[grade].clientBlocked++;
+        const aging = Number(record['Aging']) || 0;
+        gradeEfficiency[grade].agingTotal += aging;
+      } else {
+        gradeEfficiency[grade].blocked++;
       }
     });
 
-    // Convert to chart data
-    const gradeEfficiencyData = Object.entries(gradeEfficiency).map(([grade, stats]) => ({
-      grade,
-      utilization: Math.round((stats.available / stats.total) * 100),
-      mlConstraintRate: Math.round((stats.mlConstraint / stats.total) * 100),
-      highAgingRate: Math.round((stats.highAging / stats.total) * 100),
-      internalBlockedRate: Math.round((stats.internalBlocked / stats.total) * 100)
-    }));
+    // Calculate efficiency percentages and average aging
+    Object.keys(gradeEfficiency).forEach(grade => {
+      const gradeData = gradeEfficiency[grade];
+      gradeData.efficiency = Math.round((gradeData.available / gradeData.total) * 100);
+      gradeData.avgAging = gradeData.available > 0 ? 
+        Math.round(gradeData.agingTotal / gradeData.available) : 0;
+    });
 
-    // Bench vs RD efficiency
-    const benchRdEfficiency = data.reduce((acc, record) => {
-      const originalType = record['Bench/RD'];
-      // Map ML Return to Bench to avoid separate categories
-      const type = originalType && originalType.toLowerCase().includes('ml return') ? 'Bench' : originalType;
-      if (!acc[type]) {
-        acc[type] = { total: 0, available: 0, internalBlocked: 0, clientBlocked: 0 };
+    // Bench/RD efficiency analysis
+    const benchRdEfficiency = {};
+    data.forEach(record => {
+      let benchRd = record['Bench/RD'];
+      if (benchRd && benchRd.toLowerCase().includes('ml return')) {
+        benchRd = 'ML Return';
       }
       
-      acc[type].total++;
+      const isAvailable = (record['Deployment Status'] || '').toLowerCase().includes('available');
       
-      if ((record['Deployment Status'] || '').toLowerCase().includes('available')) {
-        acc[type].available++;
-      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')) {
-        acc[type].internalBlocked++;
-      } else if (record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')) {
-        acc[type].clientBlocked++;
+      if (!benchRdEfficiency[benchRd]) {
+        benchRdEfficiency[benchRd] = { total: 0, available: 0, blocked: 0, avgAging: 0, agingTotal: 0 };
       }
       
-      return acc;
-    }, {});
+      benchRdEfficiency[benchRd].total++;
+      if (isAvailable) {
+        benchRdEfficiency[benchRd].available++;
+        const aging = Number(record['Aging']) || 0;
+        benchRdEfficiency[benchRd].agingTotal += aging;
+      } else {
+        benchRdEfficiency[benchRd].blocked++;
+      }
+    });
 
-    const benchRdData = Object.entries(benchRdEfficiency)
-      .sort(([a], [b]) => {
-        // Sort Bench first, then RD
-        if (a === 'Bench' && b === 'RD') return -1;
-        if (a === 'RD' && b === 'Bench') return 1;
-        return 0;
-      })
-      .map(([type, stats]) => ({
-        type,
-        utilization: Math.round((stats.available / stats.total) * 100),
-        internalBlockedRate: Math.round((stats.internalBlocked / stats.total) * 100),
-        clientBlockedRate: Math.round((stats.clientBlocked / stats.total) * 100)
-      }));
+    // Calculate efficiency percentages
+    Object.keys(benchRdEfficiency).forEach(benchRd => {
+      const benchRdData = benchRdEfficiency[benchRd];
+      benchRdData.efficiency = Math.round((benchRdData.available / benchRdData.total) * 100);
+      benchRdData.avgAging = benchRdData.available > 0 ? 
+        Math.round(benchRdData.agingTotal / benchRdData.available) : 0;
+    });
+
+    // Status trend analysis
+    const statusTrends = {};
+    data.forEach(record => {
+      const status = record['Deployment Status'];
+      if (status) {
+        if (!statusTrends[status]) {
+          statusTrends[status] = 0;
+        }
+        statusTrends[status]++;
+      }
+    });
+
+    // Location trend analysis
+    const locationTrends = {};
+    data.forEach(record => {
+      const location = record['Location'] || 'Unknown';
+      if (!locationTrends[location]) {
+        locationTrends[location] = { total: 0, available: 0, avgAging: 0, agingTotal: 0 };
+      }
+      
+      const isAvailable = (record['Deployment Status'] || '').toLowerCase().includes('available');
+      locationTrends[location].total++;
+      
+      if (isAvailable) {
+        locationTrends[location].available++;
+        const aging = Number(record['Aging']) || 0;
+        locationTrends[location].agingTotal += aging;
+      }
+    });
+
+    // Calculate location efficiency
+    Object.keys(locationTrends).forEach(location => {
+      const locationData = locationTrends[location];
+      locationData.efficiency = Math.round((locationData.available / locationData.total) * 100);
+      locationData.avgAging = locationData.available > 0 ? 
+        Math.round(locationData.agingTotal / locationData.available) : 0;
+    });
+
+    // Constraint analysis
+    const constraintAnalysis = {
+      mlReturn: data.filter(record => {
+        const benchRd = record['Bench/RD'] || '';
+        const deploymentStatus = record['Deployment Status'] || '';
+        return benchRd.toLowerCase().includes('ml return') && 
+               deploymentStatus.toLowerCase().includes('available');
+      }).length,
+      locationConstraint: data.filter(record => {
+        const relocation = (record['Relocation'] || '').toString().trim();
+        const isRelocationEmpty = relocation === '' || relocation === '-';
+        const isDeploymentStatusAvailable = record['Deployment Status'] && 
+          record['Deployment Status'].trim().toLowerCase().includes('available');
+        const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
+          (record['Deployment Status'] || '').toLowerCase().includes('available');
+        return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
+      }).length,
+      highAging: data.filter(record => {
+        const deploymentStatus = record['Deployment Status'] || '';
+        const aging = Number(record['Aging']) || 0;
+        return deploymentStatus.toLowerCase().includes('available') && aging > 90;
+      }).length
+    };
+
+    // Aging distribution
+    const agingDistribution = data
+      .filter(record => (record['Deployment Status'] || '').toLowerCase().includes('available'))
+      .map(record => ({
+        grade: record['Grade'],
+        aging: Number(record['Aging']) || 0,
+        benchRd: record['Bench/RD'],
+        location: record['Location'] || 'Unknown'
+      }))
+      .sort((a, b) => b.aging - a.aging);
 
     return {
-      agingTrends: Object.values(agingTrends),
-      gradeEfficiencyData,
-      benchRdData
+      agingTrends,
+      gradeEfficiency,
+      benchRdEfficiency,
+      statusTrends,
+      locationTrends,
+      constraintAnalysis,
+      agingDistribution
     };
   };
 
   const trends = calculateTrends();
 
-  // Calculate insights
-  const insights = {
-    totalResources: data.length,
-    availableResources: data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length,
-    utilizationRate: Math.round((data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length / data.length) * 100),
-    avgAging: Math.round(data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available'))
-      .reduce((sum, r) => sum + (Number(r['Aging']) || 0), 0) / 
-      data.filter(r => (r['Deployment Status'] || '').toLowerCase().includes('available')).length || 0),
-    highAgingCount: data.filter(r => {
-      const deploymentStatus = r['Deployment Status'] || '';
-      const aging = Number(r['Aging']) || 0;
-      const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
-      return isDeploymentStatusAvailable && aging > 90;
-    }).length
-  };
+  // Prepare chart data
+  const agingTrendData = Object.values(trends.agingTrends).sort((a, b) => {
+    const order = { '0-30': 1, '31-60': 2, '61-90': 3, '90+': 4 };
+    return order[a.name] - order[b.name];
+  });
+
+  const gradeEfficiencyData = Object.entries(trends.gradeEfficiency).map(([grade, data]) => ({
+    grade,
+    efficiency: data.efficiency,
+    total: data.total,
+    available: data.available,
+    avgAging: data.avgAging
+  })).sort((a, b) => b.efficiency - a.efficiency);
+
+  const benchRdEfficiencyData = Object.entries(trends.benchRdEfficiency).map(([benchRd, data]) => ({
+    benchRd,
+    efficiency: data.efficiency,
+    total: data.total,
+    available: data.available,
+    avgAging: data.avgAging
+  }));
+
+  const statusTrendData = Object.entries(trends.statusTrends).map(([status, count]) => ({
+    status: status.length > 20 ? status.substring(0, 20) + '...' : status,
+    count,
+    fullStatus: status
+  })).sort((a, b) => b.count - a.count);
+
+  const locationEfficiencyData = Object.entries(trends.locationTrends)
+    .filter(([, data]) => data.total >= 3) // Only show locations with 3+ resources
+    .map(([location, data]) => ({
+      location: location.length > 15 ? location.substring(0, 15) + '...' : location,
+      efficiency: data.efficiency,
+      total: data.total,
+      available: data.available,
+      avgAging: data.avgAging,
+      fullLocation: location
+    }))
+    .sort((a, b) => b.efficiency - a.efficiency)
+    .slice(0, 10);
+
+  const constraintData = [
+    { name: 'ML Return', value: trends.constraintAnalysis.mlReturn, color: '#8b5cf6' },
+    { name: 'Location', value: trends.constraintAnalysis.locationConstraint, color: '#06b6d4' },
+    { name: 'High Aging', value: trends.constraintAnalysis.highAging, color: '#f59e0b' }
+  ];
+
+  const agingDistributionData = trends.agingDistribution.slice(0, 20).map((record, index) => ({
+    index: index + 1,
+    aging: record.aging,
+    grade: record.grade,
+    benchRd: record.benchRd,
+    location: record.location
+  }));
 
   return (
-    <div style={{ 
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
-      <h2 style={{ 
-        flexShrink: 0,
-        marginBottom: '1rem',
-        color: 'var(--text-primary)',
-        fontSize: 'var(--font-size-2xl)',
-        fontWeight: 'var(--font-weight-bold)'
-      }}>
-        Trend Analysis & Insights
-      </h2>
-      <div style={{ 
-        flex: 1, 
-        overflow: 'auto'
-      }}>
+    <div className="trends-container">
+      {/* Key Insights Cards */}
+      <div className="trends-insights-grid">
+        <div className="insight-card primary">
+          <div className="insight-icon">📊</div>
+          <div className="insight-content">
+            <h3>Grade Efficiency</h3>
+            <p>Highest: {gradeEfficiencyData[0]?.grade} ({gradeEfficiencyData[0]?.efficiency}%)</p>
+          </div>
+        </div>
+        <div className="insight-card success">
+          <div className="insight-icon">🎯</div>
+          <div className="insight-content">
+            <h3>Best Performing Type</h3>
+            <p>{benchRdEfficiencyData.sort((a, b) => b.efficiency - a.efficiency)[0]?.benchRd}</p>
+          </div>
+        </div>
+        <div className="insight-card warning">
+          <div className="insight-icon">⚠️</div>
+          <div className="insight-content">
+            <h3>Total Constraints</h3>
+            <p>{Object.values(trends.constraintAnalysis).reduce((sum, val) => sum + val, 0)} resources</p>
+          </div>
+        </div>
+        <div className="insight-card info">
+          <div className="insight-icon">📍</div>
+          <div className="insight-content">
+            <h3>Top Location</h3>
+            <p>{locationEfficiencyData[0]?.fullLocation || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
 
-      {/* Key Metrics */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Overall Utilization
-              </Typography>
-              <Typography variant="h4" color="primary.main">
-                {insights.utilizationRate}%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Average Aging
-              </Typography>
-              <Typography variant="h4" color="info.main">
-                {insights.avgAging} days
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                High Aging Resources
-              </Typography>
-              <Typography variant="h4" color="error.main">
-                {insights.highAgingCount}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Available Resources
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {insights.availableResources}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Charts */}
-      <Grid container spacing={3}>
-        {/* Aging Distribution */}
-        <Grid item xs={12} md={4} size={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Aging Distribution
-            </Typography>
+      {/* Main Content Card */}
+      <div className="trends-main-card">
+        {/* Charts Grid */}
+        <div className="trends-charts-grid">
+        {/* Aging Trends */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Aging Distribution</h3>
+            <p>Resources by aging groups</p>
+          </div>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={trends.agingTrends}>
+              <BarChart data={agingTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" name="Resources" />
+                <Bar dataKey="count" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
-          </Paper>
-        </Grid>
+          </div>
+        </div>
 
         {/* Grade Efficiency */}
-        <Grid item xs={12} md={4} size={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Grade Utilization Rates
-            </Typography>
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Grade Efficiency</h3>
+            <p>Availability rate by grade</p>
+          </div>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={trends.gradeEfficiencyData}>
+              <BarChart data={gradeEfficiencyData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="grade" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="utilization" fill="#00C49F" name="Utilization %" />
-                <Bar dataKey="mlConstraintRate" fill="#FFBB28" name="ML Constraint %" />
-                <Bar dataKey="highAgingRate" fill="#FF8042" name="High Aging %" />
+                <Bar dataKey="efficiency" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
-          </Paper>
-        </Grid>
+          </div>
+        </div>
 
-        {/* Bench vs RD Efficiency */}
-        <Grid item xs={12} md={4} size={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Bench vs RD Efficiency Comparison
-            </Typography>
+        {/* Bench/RD Efficiency */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Type Efficiency</h3>
+            <p>Availability rate by type</p>
+          </div>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={trends.benchRdData}>
+              <BarChart data={benchRdEfficiencyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="type" />
+                <XAxis dataKey="benchRd" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="utilization" fill="#00C49F" name="Utilization %" />
-                <Bar dataKey="internalBlockedRate" fill="#FF8042" name="Internal Blocked %" />
-                <Bar dataKey="clientBlockedRate" fill="#FFBB28" name="Client Blocked %" />
+                <Bar dataKey="efficiency" fill="#f59e0b" />
               </BarChart>
             </ResponsiveContainer>
-          </Paper>
-        </Grid>
-      </Grid>
+          </div>
+        </div>
 
-      {/* Recommendations */}
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Recommendations & Action Items
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Box>
-              <Typography variant="subtitle1" color="error.main" gutterBottom>
-                ⚠️ High Priority Actions
-              </Typography>
-              <ul>
-                {insights.highAgingCount > 0 && (
-                  <li>
-                    <Typography variant="body2">
-                      <strong>{insights.highAgingCount} resources</strong> have been on bench for over 90 days. 
-                      Consider reassignment or upskilling initiatives.
-                    </Typography>
-                  </li>
-                )}
-                {insights.utilizationRate < 70 && (
-                  <li>
-                    <Typography variant="body2">
-                      Utilization rate is <strong>{insights.utilizationRate}%</strong>. 
-                      Focus on improving resource allocation and reducing bench time.
-                    </Typography>
-                  </li>
-                )}
-              </ul>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box>
-              <Typography variant="subtitle1" color="success.main" gutterBottom>
-                ✅ Optimization Opportunities
-              </Typography>
-              <ul>
-                <li>
-                  <Typography variant="body2">
-                    <strong>{insights.availableResources} resources</strong> are available for immediate deployment.
-                  </Typography>
-                </li>
-                <li>
-                  <Typography variant="body2">
-                    Average aging of <strong>{insights.avgAging} days</strong> indicates moderate resource turnover.
-                  </Typography>
-                </li>
-                <li>
-                  <Typography variant="body2">
-                    Consider implementing automated resource matching to reduce aging.
-                  </Typography>
-                </li>
-              </ul>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+        {/* Status Distribution */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Status Distribution</h3>
+            <p>Resources by deployment status</p>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusTrendData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="count"
+                >
+                  {statusTrendData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Location Efficiency */}
+        <div className="chart-card full-width">
+          <div className="chart-header">
+            <h3>Location Performance</h3>
+            <p>Efficiency and aging by location</p>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={locationEfficiencyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="location" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Bar yAxisId="left" dataKey="efficiency" fill="#06b6d4" name="Efficiency %" />
+                <Line yAxisId="right" type="monotone" dataKey="avgAging" stroke="#f59e0b" name="Avg Aging" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Constraint Analysis */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Constraint Breakdown</h3>
+            <p>Available resources with constraints</p>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={constraintData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {constraintData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Aging Scatter Plot */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Top Aging Resources</h3>
+            <p>Individual resource aging analysis</p>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <ScatterChart data={agingDistributionData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="index" name="Rank" />
+                <YAxis dataKey="aging" name="Aging Days" />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                <Scatter dataKey="aging" fill="#ef4444" />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        </div>
+
+        {/* Detailed Analysis Tables */}
+        <div className="trends-tables">
+        <div className="table-section">
+          <h3>Grade Performance Analysis</h3>
+          <div className="table-container">
+            <table className="trends-table">
+              <thead>
+                <tr>
+                  <th>Grade</th>
+                  <th>Total</th>
+                  <th>Available</th>
+                  <th>Efficiency</th>
+                  <th>Avg Aging</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gradeEfficiencyData.map((grade, index) => (
+                  <tr key={index}>
+                    <td>{grade.grade}</td>
+                    <td>{grade.total}</td>
+                    <td>{grade.available}</td>
+                    <td>
+                      <span className={`efficiency-badge ${grade.efficiency >= 70 ? 'high' : grade.efficiency >= 50 ? 'medium' : 'low'}`}>
+                        {grade.efficiency}%
+                      </span>
+                    </td>
+                    <td>{grade.avgAging} days</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="table-section">
+          <h3>Location Performance Analysis</h3>
+          <div className="table-container">
+            <table className="trends-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th>Total</th>
+                  <th>Available</th>
+                  <th>Efficiency</th>
+                  <th>Avg Aging</th>
+                </tr>
+              </thead>
+              <tbody>
+                {locationEfficiencyData.map((location, index) => (
+                  <tr key={index}>
+                    <td title={location.fullLocation}>{location.location}</td>
+                    <td>{location.total}</td>
+                    <td>{location.available}</td>
+                    <td>
+                      <span className={`efficiency-badge ${location.efficiency >= 70 ? 'high' : location.efficiency >= 50 ? 'medium' : 'low'}`}>
+                        {location.efficiency}%
+                      </span>
+                    </td>
+                    <td>{location.avgAging} days</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 import Analytics from './components/Analytics';
 import TrendAnalysis from './components/TrendAnalysis';
-import ResourceDetails from './components/ResourceDetails';
 import ExcelUploader from './components/ExcelUploader';
 import { calculateStatusCounts } from './utils/businessLogic';
 import './App.css';
@@ -125,6 +124,98 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
     setDetailsOpen(true);
   };
 
+  // Handle row total click (All Grades for a specific Bench/RD and Status)
+  const handleRowTotalClick = (benchRd, status, count) => {
+    if (count === 0) return;
+    
+    const filteredData = data.filter(record => {
+      const recordBenchRd = record['Bench/RD'];
+      const recordStatus = record['Deployment Status'] || '';
+      
+      // Check Bench/RD match with special handling for Bench row
+      if (benchRd === 'Bench') {
+        // For Bench row, include both Bench and ML Return records
+        const isBench = recordBenchRd === 'Bench' || 
+               (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+        if (!isBench) return false;
+      } else {
+        if (recordBenchRd !== benchRd) return false;
+      }
+      
+      // Check status match
+      if (status === 'Available - ML return constraint') {
+        return recordBenchRd?.toLowerCase().includes('ml return') && 
+               recordStatus.toLowerCase().includes('available');
+      } else if (status === 'Available - Location Constraint') {
+        const relocation = (record['Relocation'] || '').toString().trim();
+        const isRelocationEmpty = relocation === '' || relocation === '-';
+        const isDeploymentStatusAvailable = recordStatus.toLowerCase().includes('available');
+        const isMLConstraint = recordBenchRd?.toLowerCase().includes('ml return') && 
+          recordStatus.toLowerCase().includes('available');
+        return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
+      } else if (status === 'Available - High Bench Ageing 90+') {
+        const aging = Number(record['Aging']) || 0;
+        return recordStatus.toLowerCase().includes('available') && aging > 90;
+      } else {
+        return recordStatus.toLowerCase().includes(status.toLowerCase());
+      }
+    });
+    
+    setDetailsData(filteredData);
+    setDetailsTitle(`${benchRd} - ${status} - All Grades`);
+    setDetailsFilters({
+      'Bench/RD': benchRd,
+      'Grade': 'All Grades',
+      'Status': status
+    });
+    setDetailsOpen(true);
+  };
+
+  // Handle grade total click (All Statuses for a specific Grade across all Bench/RD)
+  const handleGradeTotalClick = (grade, count) => {
+    if (count === 0) return;
+    
+    const filteredData = data.filter(record => {
+      return record['Grade'] === grade;
+    });
+    
+    setDetailsData(filteredData);
+    setDetailsTitle(`${grade} - All Statuses - All Types`);
+    setDetailsFilters({
+      'Bench/RD': 'All Types',
+      'Grade': grade,
+      'Status': 'All Statuses'
+    });
+    setDetailsOpen(true);
+  };
+
+  // Handle grand total click (All records for a specific Bench/RD)
+  const handleGrandTotalClick = (benchRd, count) => {
+    if (count === 0) return;
+    
+    const filteredData = data.filter(record => {
+      const recordBenchRd = record['Bench/RD'];
+      
+      // Check Bench/RD match with special handling for Bench row
+      if (benchRd === 'Bench') {
+        // For Bench row, include both Bench and ML Return records
+        return recordBenchRd === 'Bench' || 
+               (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+      } else {
+        return recordBenchRd === benchRd;
+      }
+    });
+    
+    setDetailsData(filteredData);
+    setDetailsTitle(`${benchRd} - All Statuses - All Grades`);
+    setDetailsFilters({
+      'Bench/RD': benchRd,
+      'Grade': 'All Grades',
+      'Status': 'All Statuses'
+    });
+    setDetailsOpen(true);
+  };
+
   // Only use uploaded data, no default/sample data
   const dataToUse = data && data.length > 0 ? data : [];
   const statusCounts = dataToUse.length > 0 ? calculateStatusCounts(dataToUse) : {};
@@ -209,57 +300,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
           </div>
         ) : (
           <>
-            {/* Summary Cards */}
-            <div className="summary-grid">
-              <div className="summary-card">
-                <div className="summary-card-content">
-                  <div className="summary-card-text">
-                    <p className="summary-card-label">Total Resources</p>
-                    <p className="summary-card-value">{data ? data.length : 0}</p>
-                  </div>
-                  <div className="summary-card-icon">👥</div>
-                </div>
-              </div>
-
-              <div className="summary-card success">
-                <div className="summary-card-content">
-                  <div className="summary-card-text">
-                    <p className="summary-card-label">Bench Resources</p>
-                    <p className="summary-card-value">
-                      {data ? data.filter(record => {
-                        const benchRd = record['Bench/RD'];
-                        return benchRd === 'Bench' || (benchRd && benchRd.toLowerCase().includes('ml return'));
-                      }).length : 0}
-                    </p>
-                  </div>
-                  <div className="summary-card-icon">🎯</div>
-                </div>
-              </div>
-
-              <div className="summary-card warning">
-                <div className="summary-card-content">
-                  <div className="summary-card-text">
-                    <p className="summary-card-label">RD Resources</p>
-                    <p className="summary-card-value">
-                      {data ? data.filter(record => record['Bench/RD'] === 'RD').length : 0}
-                    </p>
-                  </div>
-                  <div className="summary-card-icon">⚡</div>
-                </div>
-              </div>
-
-              <div className="summary-card error">
-                <div className="summary-card-content">
-                  <div className="summary-card-text">
-                    <p className="summary-card-label">Available</p>
-                    <p className="summary-card-value">
-                      {data ? data.filter(record => record['Deployment Status'] === 'Avail_BenchRD').length : 0}
-                    </p>
-                  </div>
-                  <div className="summary-card-icon">✅</div>
-                </div>
-              </div>
-            </div>
 
             {/* Navigation Tabs - Only show when not in upload view */}
             {activeView !== 'upload' && (
@@ -270,12 +310,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                 onClick={() => setActiveView('matrix')}
                 >
                   Matrix View
-                </button>
-                <button
-                  className={`tab-button ${activeView === 'details' ? 'active' : ''}`}
-                onClick={() => setActiveView('details')}
-                >
-                  Details View
                 </button>
                 <button
                   className={`tab-button ${activeView === 'analytics' ? 'active' : ''}`}
@@ -296,10 +330,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
             {/* Matrix View */}
             {activeView === 'matrix' && (
             <div className="matrix-container">
-              <div className="matrix-header">
-                <h2 className="matrix-title">Resource Matrix</h2>
-                <p className="matrix-subtitle">Comprehensive view of all resources by type, status, and grade</p>
-              </div>
               {dataToUse.length === 0 ? (
                 <div style={{
                   padding: '60px 20px',
@@ -337,8 +367,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                     ref={tableContainerRef}
                     tabIndex={0}
                   style={{ 
-                      overflow: 'auto',
-                    maxHeight: 'calc(100vh - 300px)',
                         outline: 'none'
                   }}
                 >
@@ -412,16 +440,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                     </td>
                                   )}
                                   <td className="status-cell">
-                                    <div className="status-indicator">
-                                      <div className={`status-dot ${
-                                        status.includes('Client Blocked') ? 'red' :
-                                        status.includes('Internal Blocked') ? 'orange' :
-                                        status.includes('Available - Location') ? 'blue' :
-                                        status.includes('Available - ML') ? 'blue' :
-                                        status.includes('Available - High') ? 'purple' : 'gray'
-                                      }`}></div>
                               {status}
-                                    </div>
                                   </td>
                                   {grades.map(grade => {
                                     const count = rowData[grade] || 0;
@@ -439,10 +458,12 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                     {count > 0 ? (
                                           <span 
                                             className={`matrix-badge ${
-                                              count > 15 ? 'red' :
-                                              count > 10 ? 'orange' :
-                                              count > 5 ? 'blue' :
-                                              count > 2 ? 'green' : 'gray'
+                                              status === 'Client Blocked' ? 'red' :
+                                              status === 'Internal Blocked' ? 'orange' :
+                                              status === 'Available - Location Constraint' ? 'blue' :
+                                              status === 'Available - ML return constraint' ? 'blue' :
+                                              status === 'Available - High Bench Ageing 90+' ? 'purple' :
+                                              'green'
                                             }`}
                                             style={{
                                               cursor: 'pointer',
@@ -460,17 +481,25 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                               e.target.style.boxShadow = 'none';
                                             }}
                                           >
-                                            {count}
+                                        {count}
                                           </span>
-                                        ) : (
+                                    ) : (
                                           <span className="matrix-badge zero">0</span>
-                                        )}
+                                    )}
                                       </td>
-                                    );
-                                  })}
-                                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                );
+                              })}
+                                  <td 
+                                    style={{ 
+                                      textAlign: 'center', 
+                                      fontWeight: 'bold',
+                                      cursor: rowTotal > 0 ? 'pointer' : 'default'
+                                    }}
+                                    onClick={() => handleRowTotalClick(benchRd, status, rowTotal)}
+                                    title={rowTotal > 0 ? `Click to view ${rowTotal} records` : 'No records'}
+                                  >
                                     {rowTotal > 0 ? (
-                                      <span className="matrix-badge green">{rowTotal}</span>
+                                      <span className="matrix-badge total">{rowTotal}</span>
                                     ) : (
                                       <span className="matrix-badge zero">0</span>
                                     )}
@@ -481,7 +510,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                           
                           {/* Total row for this Bench/RD */}
                             <tr className="total-row">
-                              <td colSpan={2} style={{ fontWeight: 'bold', paddingLeft: '16px' }}>
+                              <td style={{ fontWeight: 'bold', paddingLeft: '16px' }}>
                                   {benchRd} TOTAL
                               </td>
                               {grades.map(grade => {
@@ -489,21 +518,66 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                   return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
                                 }, 0);
                                   return (
-                                  <td key={grade} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                  <td 
+                                    key={grade} 
+                                    style={{ 
+                                      textAlign: 'center', 
+                                      fontWeight: 'bold',
+                                      cursor: gradeTotal > 0 ? 'pointer' : 'default'
+                                    }}
+                                    onClick={() => handleGradeTotalClick(grade, gradeTotal)}
+                                    title={gradeTotal > 0 ? `Click to view ${gradeTotal} records` : 'No records'}
+                                  >
                                       {gradeTotal > 0 ? (
-                                      <span className="matrix-badge green">{gradeTotal}</span>
+                                      <span className="matrix-badge total">{gradeTotal}</span>
                                     ) : (
                                       <span className="matrix-badge zero">0</span>
                                     )}
                                   </td>
                                   );
                                 })}
-                              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                {grades.reduce((total, grade) => {
-                                  return total + statusTypes.reduce((sum, status) => {
-                                    return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                              <td 
+                                style={{ 
+                                  textAlign: 'center', 
+                                  fontWeight: 'bold',
+                                  cursor: (() => {
+                                    const grandTotal = grades.reduce((total, grade) => {
+                                      return total + statusTypes.reduce((sum, status) => {
+                                        return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                      }, 0);
+                                    }, 0);
+                                    return grandTotal > 0 ? 'pointer' : 'default';
+                                  })()
+                                }}
+                                onClick={() => {
+                                  const grandTotal = grades.reduce((total, grade) => {
+                                    return total + statusTypes.reduce((sum, status) => {
+                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                    }, 0);
                                   }, 0);
-                                }, 0)}
+                                  handleGrandTotalClick(benchRd, grandTotal);
+                                }}
+                                title={(() => {
+                                  const grandTotal = grades.reduce((total, grade) => {
+                                    return total + statusTypes.reduce((sum, status) => {
+                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                    }, 0);
+                                  }, 0);
+                                  return grandTotal > 0 ? `Click to view ${grandTotal} records` : 'No records';
+                                })()}
+                              >
+                                {(() => {
+                                  const grandTotal = grades.reduce((total, grade) => {
+                                    return total + statusTypes.reduce((sum, status) => {
+                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                    }, 0);
+                                  }, 0);
+                                  return grandTotal > 0 ? (
+                                    <span className="matrix-badge total">{grandTotal}</span>
+                                  ) : (
+                                    <span className="matrix-badge zero">0</span>
+                            );
+                          })()}
                               </td>
                             </tr>
                           </React.Fragment>
@@ -517,52 +591,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
             </div>
             )}
 
-            {/* Details View */}
-            {activeView === 'details' && (
-              <div className="card">
-                <div className="card-body">
-                  {dataToUse.length === 0 ? (
-                    <div style={{
-                      padding: '60px 20px',
-                      textAlign: 'center',
-                      backgroundColor: '#f9fafb',
-                      border: '2px dashed #d1d5db',
-                      borderRadius: '8px',
-                      margin: '20px'
-                    }}>
-                      <div style={{
-                        fontSize: '48px',
-                        color: '#9ca3af',
-                        marginBottom: '16px'
-                      }}>
-                        📊
-                      </div>
-                      <h3 style={{
-                        fontSize: '18px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        margin: '0 0 8px 0'
-                      }}>
-                        Please upload the excel
-                      </h3>
-                      <p style={{
-                        fontSize: '14px',
-                        color: '#6b7280',
-                        margin: '0'
-                      }}>
-                        Upload an Excel file to view the resource details
-                      </p>
-                    </div>
-                  ) : (
-                    <ResourceDetails 
-                      data={data} 
-                      statusCounts={statusCounts}
-                      onCountClick={handleCountClick}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Analytics View */}
             {activeView === 'analytics' && (
@@ -644,7 +672,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                       </p>
                     </div>
                   ) : (
-                    <TrendAnalysis data={data} />
+                <TrendAnalysis data={data} />
                   )}
                 </div>
               </div>
@@ -653,105 +681,167 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
         )}
       </div>
 
-      {/* Details Modal */}
+      {/* Professional Details Modal */}
       {detailsOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex', 
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--bg-primary)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-xl)',
-            maxWidth: '90vw',
-            maxHeight: '90vh',
-            width: '100%',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-            <div style={{
-              padding: 'var(--spacing-lg)',
-              borderBottom: '1px solid var(--border-light)',
-                          display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h2 style={{
-                margin: 0,
-                color: 'var(--text-primary)',
-                fontSize: 'var(--font-size-xl)',
-                fontWeight: 'var(--font-weight-bold)'
-              }}>
-                {detailsTitle} ({detailsData.length} records)
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {detailsTitle}
+                <span className="modal-count-badge">
+                  {detailsData.length} records
+                </span>
               </h2>
               <button
+                className="modal-close-btn"
                 onClick={() => setDetailsOpen(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: 'var(--text-secondary)',
-                  padding: '4px'
-                }}
+                title="Close modal"
               >
                 ×
               </button>
             </div>
-            <div style={{
-              flex: 1,
-              overflow: 'auto',
-              padding: 'var(--spacing-lg)'
-            }}>
+            <div className="modal-content">
               {detailsData.length > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gap: 'var(--spacing-md)',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'
-                }}>
-                  {detailsData.map((record, index) => (
-                    <div key={index} style={{
-                      backgroundColor: 'var(--bg-tertiary)',
-                      padding: 'var(--spacing-md)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)'
-                    }}>
-                      <h4 style={{
-                        margin: '0 0 var(--spacing-sm) 0',
-                        color: 'var(--text-primary)',
-                        fontSize: 'var(--font-size-base)',
-                        fontWeight: 'var(--font-weight-semibold)'
-                      }}>
-                        {record['Name'] || 'Unknown'}
-                      </h4>
-                      <div style={{ display: 'grid', gap: '4px' }}>
-                        <div><strong>Grade:</strong> {record['Grade'] || 'N/A'}</div>
-                        <div><strong>Bench/RD:</strong> {record['Bench/RD'] || 'N/A'}</div>
-                        <div><strong>Status:</strong> {record['Deployment Status'] || 'N/A'}</div>
-                        <div><strong>Aging:</strong> {record['Aging'] || 'N/A'} days</div>
-                        <div><strong>Location:</strong> {record['Location'] || 'N/A'}</div>
-                        <div><strong>Relocation:</strong> {record['Relocation'] || 'N/A'}</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="modal-table-container">
+                  <table className="modal-table">
+                    <thead>
+                      <tr>
+                        <th>Resource</th>
+                        <th>Grade</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Aging</th>
+                        <th>Location</th>
+                        <th>Relocation</th>
+                        <th>Insights</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailsData.map((record, index) => {
+                        const getStatusTagClass = (status) => {
+                          if (status?.toLowerCase().includes('available')) return 'modal-tag-status-available';
+                          if (status?.toLowerCase().includes('blocked')) return 'modal-tag-status-blocked';
+                          if (status?.toLowerCase().includes('constraint')) return 'modal-tag-status-constraint';
+                          if (status?.toLowerCase().includes('aging')) return 'modal-tag-status-aging';
+                          return 'modal-tag-status-available';
+                        };
+
+                        const getGradeTagClass = (grade) => {
+                          return 'modal-tag-grade';
+                        };
+
+                        const getTypeTagClass = (type) => {
+                          if (type?.toLowerCase().includes('ml return')) return 'modal-tag-ml-return';
+                          if (type?.toLowerCase().includes('bench')) return 'modal-tag-bench';
+                          if (type?.toLowerCase().includes('rd')) return 'modal-tag-rd';
+                          return 'modal-tag-bench';
+                        };
+
+                        const getAgingTagClass = (aging) => {
+                          const age = parseInt(aging) || 0;
+                          if (age > 90) return 'modal-tag-aging-high';
+                          if (age > 30) return 'modal-tag-aging-medium';
+                          return 'modal-tag-aging-low';
+                        };
+
+                        const getInsightTags = (record) => {
+                          const tags = [];
+                          const aging = parseInt(record['Aging']) || 0;
+                          const status = record['Deployment Status'] || '';
+                          const type = record['Bench/RD'] || '';
+                          const relocation = record['Relocation'] || '';
+
+                          // High aging insight
+                          if (aging > 90) {
+                            tags.push({ text: 'High Aging', class: 'modal-tag-aging-high' });
+                          } else if (aging > 30) {
+                            tags.push({ text: 'Medium Aging', class: 'modal-tag-aging-medium' });
+                          }
+
+                          // ML Return insight
+                          if (type.toLowerCase().includes('ml return')) {
+                            tags.push({ text: 'ML Return', class: 'modal-tag-ml-return' });
+                          }
+
+                          // Location constraint insight
+                          if (status.toLowerCase().includes('location constraint')) {
+                            tags.push({ text: 'Location Constraint', class: 'modal-tag-status-constraint' });
+                          }
+
+                          // Relocation insight
+                          if (relocation && relocation !== '-' && relocation !== '') {
+                            tags.push({ text: 'Relocatable', class: 'modal-tag-relocation' });
+                          }
+
+                          return tags;
+                        };
+
+                        const insightTags = getInsightTags(record);
+
+                        return (
+                          <tr key={index}>
+                            <td>
+                              <div className="modal-resource-name">
+                                {record['Name'] || record['Employee Name'] || record['Resource Name'] || record['Employee'] || record['Resource'] || `Resource ${index + 1}`}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`modal-tag ${getGradeTagClass(record['Grade'])}`}>
+                                {record['Grade'] || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`modal-tag ${getTypeTagClass(record['Bench/RD'])}`}>
+                                {record['Bench/RD'] || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`modal-tag ${getStatusTagClass(record['Deployment Status'])}`}>
+                                {record['Deployment Status'] || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`modal-tag ${getAgingTagClass(record['Aging'])}`}>
+                                {record['Aging'] || 'N/A'} days
+                              </span>
+                            </td>
+                            <td>
+                              <span className="modal-tag modal-tag-location">
+                                {record['Location'] || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="modal-tag modal-tag-location">
+                                {record['Relocation'] || 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="modal-tag-container">
+                                {insightTags.map((tag, tagIndex) => (
+                                  <span key={tagIndex} className={`modal-tag ${tag.class}`}>
+                                    {tag.text}
+                                  </span>
+                                ))}
+                                {insightTags.length === 0 && (
+                                  <span className="modal-tag modal-tag-location">
+                                    Standard
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: 'var(--spacing-xl)',
-                  color: 'var(--text-secondary)'
-                }}>
-                  No records found for the selected criteria.
+                <div className="modal-empty-state">
+                  <div className="modal-empty-icon">📋</div>
+                  <div className="modal-empty-title">No Records Found</div>
+                  <div className="modal-empty-description">
+                    No records found for the selected criteria.
+                  </div>
                 </div>
               )}
             </div>
