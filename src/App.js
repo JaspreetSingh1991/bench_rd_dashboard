@@ -1,44 +1,30 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import * as XLSX from 'xlsx';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Container, 
-  Box, 
-  Button, 
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Grid,
-  Alert
-} from '@mui/material';
 
 import Analytics from './components/Analytics';
 import TrendAnalysis from './components/TrendAnalysis';
 import ResourceDetails from './components/ResourceDetails';
-import { calculateStatusCounts, generateSampleData } from './utils/businessLogic';
+import ExcelUploader from './components/ExcelUploader';
+import { calculateStatusCounts } from './utils/businessLogic';
 import './App.css';
 
 // Dashboard Component
 const Dashboard = ({ data, error, onDataLoaded, onError }) => {
-  const [activeView, setActiveView] = useState('matrix');
+  const [activeView, setActiveView] = useState('upload');
   const [dataLoaded, setDataLoaded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsData, setDetailsData] = useState([]);
   const [detailsTitle, setDetailsTitle] = useState('');
-  const [detailsFilters, setDetailsFilters] = useState({});
+  const [, setDetailsFilters] = useState({});
   const tableContainerRef = React.useRef(null);
 
-  // Update dataLoaded when data changes
+  // Update dataLoaded when data changes and switch to matrix view
   React.useEffect(() => {
     if (data && data.length > 0) {
       setDataLoaded(true);
+      setActiveView('matrix'); // Automatically switch to matrix when data is loaded
+    } else {
+      setDataLoaded(false);
+      setActiveView('upload'); // Switch back to upload view when no data
     }
   }, [data]);
 
@@ -52,8 +38,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
     }
   }, [activeView, dataLoaded]);
 
-
-
+  // Handle count click to show details
   const handleCountClick = (benchRd, grade, status, count) => {
     if (count === 0) return;
     
@@ -70,33 +55,44 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
         return recordBenchRd === 'Bench' || 
                (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
       } else {
-        // For other rows, use exact match
         return recordBenchRd === benchRd;
       }
     });
 
-    // Apply status-specific filters
+    // Filter by status
     switch (status) {
       case 'Available - ML return constraint':
         filteredData = filteredData.filter(record => {
           const benchRd = record['Bench/RD'] || '';
           const deploymentStatus = record['Deployment Status'] || '';
-          const isMLReturn = benchRd.toLowerCase().includes('ml return');
-          const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
-          return isMLReturn && isDeploymentStatusAvailable;
+          return benchRd.toLowerCase().includes('ml return') && 
+                 deploymentStatus.toLowerCase().includes('available');
         });
         break;
       case 'Internal Blocked':
-        filteredData = filteredData.filter(record => 
-          record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')
-        );
+        filteredData = filteredData.filter(record => {
+          const deploymentStatus = record['Deployment Status'] || '';
+          return deploymentStatus.toLowerCase().includes('internal blocked');
+        });
         break;
       case 'Client Blocked':
-        filteredData = filteredData.filter(record => 
-          record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')
-        );
+        filteredData = filteredData.filter(record => {
+          const deploymentStatus = record['Deployment Status'] || '';
+          return deploymentStatus.toLowerCase().includes('client blocked');
+        });
         break;
       case 'Available - Location Constraint':
+        filteredData = filteredData.filter(record => {
+          const relocation = (record['Relocation'] || '').toString().trim();
+          const isRelocationEmpty = relocation === '' || relocation === '-';
+          const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
+          const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
+            (record['Deployment Status'] || '').toLowerCase().includes('available');
+          
+          return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
+        });
+        break;
+      case 'Available - Relocation Constraint':
         filteredData = filteredData.filter(record => {
           const relocation = (record['Relocation'] || '').toString().trim();
           const isRelocationEmpty = relocation === '' || relocation === '-';
@@ -129,17 +125,17 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
     setDetailsOpen(true);
   };
 
-
-
-
-
-
-
-  // Use sample data if no data is loaded
-  const dataToUse = data && data.length > 0 ? data : generateSampleData();
-  const statusCounts = calculateStatusCounts(dataToUse);
+  // Only use uploaded data, no default/sample data
+  const dataToUse = data && data.length > 0 ? data : [];
+  const statusCounts = dataToUse.length > 0 ? calculateStatusCounts(dataToUse) : {};
+  
+  // Debug: Log the status counts to see the structure
+  // console.log('Data length:', dataToUse.length);
+  // console.log('Status Counts:', statusCounts);
   const grades = ['B1', 'B2', 'C1', 'C2', 'D1', 'D2'];
   
+  // Only create structure if we have data
+  if (dataToUse.length > 0) {
   // Ensure both Bench and RD are present with proper structure
   if (!statusCounts['Bench']) {
     statusCounts['Bench'] = {};
@@ -169,1124 +165,629 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
       };
     }
   });
-  const statusTypes = [
-    'Client Blocked',
-    'Internal Blocked',
-    'Available - Location Constraint',
-    'Available - ML return constraint',
-    'Available - High Bench Ageing 90+'
-  ];
-
-
+  }
 
   if (error) {
     return (
-      <Container>
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      </Container>
+      <div className="error-container">
+        <div className="error-content">
+          <div className="error-icon">⚠️</div>
+          <h2>Error Loading Data</h2>
+          <p>{error}</p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>Try Again</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
-      <Box sx={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        overflow: 'hidden',
-        p: 2
-      }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-        
-        {!dataLoaded ? (
-          <Box sx={{ 
-            flex: 1, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}>
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary">
-              Please upload an Excel file or load sample data to view the dashboard
-            </Typography>
-          </Paper>
-          </Box>
-        ) : (
-          <Box sx={{ 
-            flex: 1, 
-            display: 'flex', 
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}>
-            <Paper sx={{ 
-              p: 1, 
-              mb: 2,
-              mt: 1,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              flexShrink: 0
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 1, 
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-              }}>
-              <Button 
-                variant={activeView === 'matrix' ? 'contained' : 'outlined'} 
-                onClick={() => setActiveView('matrix')}
-                  sx={{ 
-                    mr: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    px: { xs: 2, sm: 3 },
-                    py: 1,
-                    ...(activeView === 'matrix' ? {
-                      background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.4)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-                        boxShadow: '0 6px 16px rgba(52, 73, 94, 0.5)'
-                      }
-                    } : {
-                      borderColor: '#34495e',
-                      color: '#34495e',
-                      '&:hover': {
-                        borderColor: '#2c3e50',
-                        backgroundColor: 'rgba(52, 73, 94, 0.08)'
-                      }
-                    })
-                  }}
-                >
-                  📊 Matrix View
-              </Button>
-              <Button 
-                variant={activeView === 'details' ? 'contained' : 'outlined'} 
-                onClick={() => setActiveView('details')}
-                  sx={{ 
-                    mr: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    px: { xs: 2, sm: 3 },
-                    py: 1,
-                    ...(activeView === 'details' ? {
-                      background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.4)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-                        boxShadow: '0 6px 16px rgba(52, 73, 94, 0.5)'
-                      }
-                    } : {
-                      borderColor: '#34495e',
-                      color: '#34495e',
-                      '&:hover': {
-                        borderColor: '#2c3e50',
-                        backgroundColor: 'rgba(52, 73, 94, 0.08)'
-                      }
-                    })
-                  }}
-                >
-                  📋 Details View
-                </Button>
-                <Button 
-                  variant={activeView === 'analytics' ? 'contained' : 'outlined'} 
-                  onClick={() => setActiveView('analytics')}
-                  sx={{ 
-                    mr: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    px: { xs: 2, sm: 3 },
-                    py: 1,
-                    ...(activeView === 'analytics' ? {
-                      background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.4)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-                        boxShadow: '0 6px 16px rgba(52, 73, 94, 0.5)'
-                      }
-                    } : {
-                      borderColor: '#34495e',
-                      color: '#34495e',
-                      '&:hover': {
-                        borderColor: '#2c3e50',
-                        backgroundColor: 'rgba(52, 73, 94, 0.08)'
-                      }
-                    })
-                  }}
-                >
-                  📈 Analytics
-                </Button>
-                <Button 
-                  variant={activeView === 'trends' ? 'contained' : 'outlined'} 
-                  onClick={() => setActiveView('trends')}
-                  sx={{ 
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    px: { xs: 2, sm: 3 },
-                    py: 1,
-                    ...(activeView === 'trends' ? {
-                      background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(52, 73, 94, 0.4)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-                        boxShadow: '0 6px 16px rgba(52, 73, 94, 0.5)'
-                      }
-                    } : {
-                      borderColor: '#34495e',
-                      color: '#34495e',
-                      '&:hover': {
-                        borderColor: '#2c3e50',
-                        backgroundColor: 'rgba(52, 73, 94, 0.08)'
-                      }
-                    })
-                  }}
-                >
-                  📊 Trends
-              </Button>
-            </Box>
-            </Paper>
+    <div className="App">
+      {/* Header */}
+      <header className="dashboard-header">
+        <div className="header-content">
+          <div className="logo-section">
+            <div className="logo-icon">📊</div>
+            <div className="logo-text">
+              <h1 className="logo-title">Bench/RD Tracker</h1>
+              <p className="logo-subtitle">Resource Management Dashboard</p>
+            </div>
+          </div>
+          <div className="header-actions">
+            <ExcelUploader onDataLoaded={onDataLoaded} onError={onError} />
+          </div>
+        </div>
+      </header>
 
+      {/* Main Content */}
+      <div className="dashboard-content">
+        {activeView === 'upload' ? (
+          <div className="loading-container">
+            <div className="loading-content">
+              <h2>Welcome to Bench/RD Tracker</h2>
+              <p>Please upload an Excel file to view the dashboard</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="summary-grid">
+              <div className="summary-card">
+                <div className="summary-card-content">
+                  <div className="summary-card-text">
+                    <p className="summary-card-label">Total Resources</p>
+                    <p className="summary-card-value">{data ? data.length : 0}</p>
+                  </div>
+                  <div className="summary-card-icon">👥</div>
+                </div>
+              </div>
+
+              <div className="summary-card success">
+                <div className="summary-card-content">
+                  <div className="summary-card-text">
+                    <p className="summary-card-label">Bench Resources</p>
+                    <p className="summary-card-value">
+                      {data ? data.filter(record => {
+                        const benchRd = record['Bench/RD'];
+                        return benchRd === 'Bench' || (benchRd && benchRd.toLowerCase().includes('ml return'));
+                      }).length : 0}
+                    </p>
+                  </div>
+                  <div className="summary-card-icon">🎯</div>
+                </div>
+              </div>
+
+              <div className="summary-card warning">
+                <div className="summary-card-content">
+                  <div className="summary-card-text">
+                    <p className="summary-card-label">RD Resources</p>
+                    <p className="summary-card-value">
+                      {data ? data.filter(record => record['Bench/RD'] === 'RD').length : 0}
+                    </p>
+                  </div>
+                  <div className="summary-card-icon">⚡</div>
+                </div>
+              </div>
+
+              <div className="summary-card error">
+                <div className="summary-card-content">
+                  <div className="summary-card-text">
+                    <p className="summary-card-label">Available</p>
+                    <p className="summary-card-value">
+                      {data ? data.filter(record => record['Deployment Status'] === 'Avail_BenchRD').length : 0}
+                    </p>
+                  </div>
+                  <div className="summary-card-icon">✅</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Tabs - Only show when not in upload view */}
+            {activeView !== 'upload' && (
+            <div className="nav-tabs">
+              <div className="tab-list">
+                <button
+                  className={`tab-button ${activeView === 'matrix' ? 'active' : ''}`}
+                onClick={() => setActiveView('matrix')}
+                >
+                  Matrix View
+                </button>
+                <button
+                  className={`tab-button ${activeView === 'details' ? 'active' : ''}`}
+                onClick={() => setActiveView('details')}
+                >
+                  Details View
+                </button>
+                <button
+                  className={`tab-button ${activeView === 'analytics' ? 'active' : ''}`}
+                  onClick={() => setActiveView('analytics')}
+                >
+                  Analytics
+                </button>
+                <button
+                  className={`tab-button ${activeView === 'trends' ? 'active' : ''}`}
+                  onClick={() => setActiveView('trends')}
+                >
+                  Trends
+                </button>
+              </div>
+            </div>
+            )}
+
+            {/* Matrix View */}
             {activeView === 'matrix' && (
-              <Box sx={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                overflow: 'hidden'
-              }}>
-                <Paper sx={{ 
-                  p: 1, 
-                  borderRadius: 2,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden'
+            <div className="matrix-container">
+              <div className="matrix-header">
+                <h2 className="matrix-title">Resource Matrix</h2>
+                <p className="matrix-subtitle">Comprehensive view of all resources by type, status, and grade</p>
+              </div>
+              {dataToUse.length === 0 ? (
+                <div style={{
+                  padding: '60px 20px',
+                  textAlign: 'center',
+                  backgroundColor: '#f9fafb',
+                  border: '2px dashed #d1d5db',
+                  borderRadius: '8px',
+                  margin: '20px'
                 }}>
-                  <TableContainer 
+                  <div style={{
+                    fontSize: '48px',
+                    color: '#9ca3af',
+                    marginBottom: '16px'
+                  }}>
+                    📊
+                  </div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    margin: '0 0 8px 0'
+                  }}>
+                    Please upload the excel
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: '0'
+                  }}>
+                    Upload an Excel file to view the resource matrix
+                  </p>
+                </div>
+              ) : (
+                <div 
                     ref={tableContainerRef}
                     tabIndex={0}
-                    sx={{ 
-                      borderRadius: 2,
+                  style={{ 
                       overflow: 'auto',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                      flex: 1,
-                      maxHeight: 'calc(100vh - 160px)',
-                      outline: 'none',
-                      '&:focus': {
+                    maxHeight: 'calc(100vh - 300px)',
                         outline: 'none'
-                      },
-                      '&::-webkit-scrollbar': {
-                        width: '8px',
-                        height: '8px'
-                      },
-                      '&::-webkit-scrollbar-track': {
-                        background: '#f1f1f1',
-                        borderRadius: '4px'
-                      },
-                      '&::-webkit-scrollbar-thumb': {
-                        background: '#c1c1c1',
-                        borderRadius: '4px',
-                        '&:hover': {
-                          background: '#a8a8a8'
-                        }
-                      }
-                    }}>
-                  <Table size="small" stickyHeader>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#34495e' }}>
-                        <TableCell sx={{ 
-                          color: 'white', 
-                          fontWeight: 600,
-                          fontSize: '1rem',
-                          borderRight: '2px solid #2c3e50',
-                          backgroundColor: '#34495e !important',
-                          position: 'sticky',
-                          left: 0,
-                          zIndex: 2
-                        }}>
-                          Bench/RD
-                        </TableCell>
-                        <TableCell sx={{ 
-                          color: 'white', 
-                          fontWeight: 600,
-                          fontSize: '1rem',
-                          borderRight: '2px solid #2c3e50',
-                          backgroundColor: '#34495e !important',
-                          position: 'sticky',
-                          left: '120px',
-                          zIndex: 2
-                        }}>
-                          Status
-                        </TableCell>
-                        {grades.map((grade, index) => (
-                          <TableCell 
-                            key={grade} 
-                            align="center"
-                            sx={{ 
-                              color: 'white', 
-                              fontWeight: 600,
-                              fontSize: '0.9rem',
-                              backgroundColor: index % 2 === 0 ? '#34495e' : '#2c3e50',
-                              borderRight: '1px solid #5a6c7d'
-                            }}
-                          >
+                  }}
+                >
+                  {dataToUse.length > 0 ? (
+                    <table className="matrix-table">
+                      <thead>
+                        <tr>
+                          <th style={{ minWidth: '120px' }}>Bench/RD</th>
+                          <th style={{ minWidth: '120px' }}>Status</th>
+                          {grades.map((grade, index) => (
+                            <th key={grade} style={{ minWidth: '80px' }}>
                             {grade}
-                          </TableCell>
-                        ))}
-                        <TableCell 
-                          align="center"
-                          sx={{ 
-                            color: 'white', 
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                            backgroundColor: '#2c3e50',
-                            borderRight: 'none'
-                          }}
-                        >
-                          Grand Total
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
+                            </th>
+                          ))}
+                          <th style={{ minWidth: '100px' }}>Grand Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                       {Object.keys(statusCounts).sort((a, b) => {
-                        // Sort Bench first, then RD
                         if (a === 'Bench' && b === 'RD') return -1;
                         if (a === 'RD' && b === 'Bench') return 1;
                         return 0;
-                      }).map((benchRd, benchIndex) => (
-                        <>
-                          {/* Regular status rows for this Bench/RD */}
-                          {statusTypes.map((status, statusIndex) => (
-                            <TableRow 
-                              key={`${benchRd}-${status}`}
-                              sx={{ 
-                                backgroundColor: (benchIndex + statusIndex) % 2 === 0 ? '#f8f9fa' : '#ffffff',
-                                '&:hover': {
-                                  backgroundColor: '#e3f2fd',
-                                  transform: 'scale(1.01)',
-                                  transition: 'all 0.2s ease-in-out'
-                                }
-                              }}
-                            >
-                                                          <TableCell sx={{ 
-                              fontWeight: 600,
-                              fontSize: '1rem',
-                              color: '#2c3e50',
-                              borderRight: '2px solid #e0e0e0',
-                              backgroundColor: benchRd === 'Bench' ? '#e8f5e8' : '#fff3e0',
-                              position: 'sticky',
-                              left: 0,
-                              zIndex: 1
-                            }}>
-                              {benchRd}
-                            </TableCell>
-                            <TableCell sx={{ 
-                              fontWeight: 600,
-                              fontSize: '0.9rem',
-                              color: '#2c3e50',
-                              borderRight: '2px solid #e0e0e0',
-                              backgroundColor: statusIndex % 2 === 0 ? '#f5f5f5' : '#ffffff',
-                              position: 'sticky',
-                              left: '120px',
-                              zIndex: 1
-                            }}>
-                              {status}
-                            </TableCell>
-                              {grades.map((grade, gradeIndex) => {
-                                const count = statusCounts[benchRd][grade]?.[status] || 0;
-                                const getStatusColor = (status) => {
-                                  switch (status) {
-                                    case 'Available - ML return constraint':
-                                      return '#ff9800';
-                                    case 'Internal Blocked':
-                                      return '#f44336';
-                                    case 'Client Blocked':
-                                      return '#ff5722';
-                                    case 'Available - Location Constraint':
-                                      return '#2196f3';
-                                    case 'Available - High Bench Ageing 90+':
-                                      return '#9c27b0';
-                                    default:
-                                      return '#757575';
-                                  }
-                                };
-                                
-                                return (
-                                  <TableCell 
-                                    key={grade} 
-                                    align="center"
-                                    sx={{ 
-                                      cursor: count > 0 ? 'pointer' : 'default',
-                                      fontWeight: count > 0 ? 600 : 400,
-                                      fontSize: count > 0 ? '1.1rem' : '1rem',
-                                      color: count > 0 ? getStatusColor(status) : '#9e9e9e',
-                                      backgroundColor: count > 0 ? `${getStatusColor(status)}15` : 'transparent',
-                                      borderRight: '1px solid #e0e0e0',
-                                      transition: 'all 0.2s ease-in-out',
-                                      '&:hover': count > 0 ? { 
-                                        backgroundColor: `${getStatusColor(status)}25`,
-                                        transform: 'scale(1.05)',
-                                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                        zIndex: 1,
-                                        position: 'relative'
-                                      } : {}
-                                    }}
-                                    onClick={() => handleCountClick(benchRd, grade, status, count)}
-                                  >
-                                    {count > 0 ? (
-                                      <Box sx={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        minWidth: '32px',
-                                        height: '32px',
-                                        borderRadius: '16px',
-                                        backgroundColor: getStatusColor(status),
-                                        color: 'white',
-                                        fontWeight: 600,
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                      }}>
-                                        {count}
-                                      </Box>
-                                    ) : (
-                                      count
-                                    )}
-                                  </TableCell>
-                                );
-                              })}
-                              
-                              {/* Grand Total column for this row */}
-                              {(() => {
-                                // Calculate grand total for this Bench/RD + Status across all grades
-                                let grandTotal = 0;
-                                grades.forEach(grade => {
-                                  grandTotal += statusCounts[benchRd][grade]?.[status] || 0;
-                                });
-                                
-                                return (
-                                  <TableCell 
-                                    align="center"
-                                    sx={{ 
-                                      cursor: grandTotal > 0 ? 'pointer' : 'default',
-                                      fontWeight: 700,
-                                      fontSize: '1.2rem',
-                                      color: '#2c3e50',
-                                      backgroundColor: '#f8f9fa',
-                                      borderRight: 'none',
-                                      borderLeft: '2px solid #34495e',
-                                      transition: 'all 0.2s ease-in-out',
-                                      '&:hover': grandTotal > 0 ? { 
-                                        backgroundColor: '#e3f2fd',
-                                        transform: 'scale(1.02)',
-                                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                        zIndex: 1,
-                                        position: 'relative'
-                                      } : {}
-                                    }}
-                                    onClick={() => {
-                                      if (grandTotal > 0) {
-                                        // Show all records for this Bench/RD + Status across all grades
-                                        let filteredData = data.filter(record => {
-                                          const recordBenchRd = record['Bench/RD'];
-                                          if (benchRd === 'Bench') {
-                                            // For Bench row, include both Bench and ML Return records
-                                            return recordBenchRd === 'Bench' || 
-                                                   (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
-                                          } else {
-                                            // For other rows, use exact match
-                                            return recordBenchRd === benchRd;
-                                          }
-                                        });
-
-                                        // Apply status-specific filters
-                                        switch (status) {
-                                          case 'Available - ML return constraint':
-                                            filteredData = filteredData.filter(record => {
-                                              const benchRd = record['Bench/RD'] || '';
-                                              const deploymentStatus = record['Deployment Status'] || '';
-                                              const isMLReturn = benchRd.toLowerCase().includes('ml return');
-                                              const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
-                                              return isMLReturn && isDeploymentStatusAvailable;
-                                            });
-                                            break;
-                                          case 'Internal Blocked':
-                                            filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')
-                                            );
-                                            break;
-                                          case 'Client Blocked':
-                                            filteredData = filteredData.filter(record => 
-                                              record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')
-                                            );
-                                            break;
-                                          case 'Available - Location Constraint':
-                                            filteredData = filteredData.filter(record => {
-                                              const relocation = (record['Relocation'] || '').toString().trim();
-                                              const isRelocationEmpty = relocation === '' || relocation === '-';
-                                              const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
-                                              const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
-                                                (record['Deployment Status'] || '').toLowerCase().includes('available');
-                                              
-                                              return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
-                                            });
-                                            break;
-                                          case 'Available - High Bench Ageing 90+':
-                                            filteredData = filteredData.filter(record => {
-                                              const deploymentStatus = record['Deployment Status'] || '';
-                                              const aging = Number(record['Aging']) || 0;
-                                              const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
-                                              return isDeploymentStatusAvailable && aging > 90;
-                                            });
-                                            break;
-                                          default:
-                                            break;
-                                        }
-
-                                        setDetailsData(filteredData);
-                                        setDetailsTitle(`${status} - ${benchRd} (All Grades - Total: ${grandTotal})`);
-                                        setDetailsFilters({
-                                          'Bench/RD': benchRd,
-                                          'Status': status,
-                                          'Total': grandTotal
-                                        });
-                                        setDetailsOpen(true);
-                                      }
-                                    }}
-                                  >
-                                    {grandTotal > 0 ? (
-                                      <Box sx={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        minWidth: '40px',
-                                        height: '40px',
-                                        borderRadius: '20px',
-                                        backgroundColor: '#34495e',
-                                        color: 'white',
-                                        fontWeight: 700,
-                                        boxShadow: '0 3px 6px rgba(0,0,0,0.3)'
-                                      }}>
-                                        {grandTotal}
-                                      </Box>
-                                    ) : (
-                                      grandTotal
-                                    )}
-                              </TableCell>
-                                );
-                              })()}
-                            </TableRow>
-                          ))}
-                          
-                          {/* Total row for this Bench/RD */}
-                          {(() => {
-                            // Calculate totals for this Bench/RD across all statuses and grades
-                            let totalForBenchRd = 0;
-                            const totalsByGrade = {};
-                            
-                            grades.forEach(grade => {
-                              totalsByGrade[grade] = 0;
-                              statusTypes.forEach(status => {
-                                const count = statusCounts[benchRd][grade]?.[status] || 0;
-                                totalsByGrade[grade] += count;
-                                totalForBenchRd += count;
+                      }).map((benchRd, benchIndex) => {
+                        const statusTypes = [
+                          'Client Blocked',
+                          'Internal Blocked',
+                          'Available - Location Constraint',
+                          'Available - ML return constraint',
+                          'Available - High Bench Ageing 90+'
+                        ];
+                        const totalRows = statusTypes.length + 1; // +1 for the total row
+                        
+                        return (
+                          <React.Fragment key={benchRd}>
+                            {statusTypes.map((status, statusIndex) => {
+                              // Get the data for this specific status across all grades
+                              const rowData = {};
+                              grades.forEach(grade => {
+                                rowData[grade] = statusCounts[benchRd]?.[grade]?.[status] || 0;
                               });
-                            });
-                            
-                            return (
-                              <TableRow 
-                                key={`${benchRd}-TOTAL`}
-                                sx={{ 
-                                  backgroundColor: benchRd === 'Bench' ? '#e8f5e8' : '#fff3e0',
-                                  borderTop: '3px solid #34495e',
-                                  '&:hover': {
-                                    backgroundColor: benchRd === 'Bench' ? '#d4edda' : '#ffe0b2',
-                                    transform: 'scale(1.01)',
-                                    transition: 'all 0.2s ease-in-out'
-                                  }
-                                }}
-                              >
-                                <TableCell sx={{ 
-                                  fontWeight: 700,
-                                  fontSize: '1.1rem',
-                                  color: '#2c3e50',
-                                  borderRight: '2px solid #e0e0e0',
-                                  backgroundColor: benchRd === 'Bench' ? '#c8e6c9' : '#ffcc80',
-                                  position: 'sticky',
-                                  left: 0,
-                                  zIndex: 1
-                                }}>
-                                  {benchRd} TOTAL
-                                </TableCell>
-                                <TableCell sx={{ 
-                                  fontWeight: 700,
-                                  fontSize: '1rem',
-                                  color: '#2c3e50',
-                                  borderRight: '2px solid #e0e0e0',
-                                  backgroundColor: benchRd === 'Bench' ? '#c8e6c9' : '#ffcc80',
-                                  position: 'sticky',
-                                  left: '120px',
-                                  zIndex: 1
-                                }}>
-                                  All Statuses
-                                </TableCell>
-                                {grades.map((grade, gradeIndex) => {
-                                  const gradeTotal = totalsByGrade[grade];
-                                  
-                                  return (
-                                    <TableCell 
-                                      key={`${benchRd}-TOTAL-${grade}`}
-                                      align="center"
-                                      sx={{ 
-                                        cursor: gradeTotal > 0 ? 'pointer' : 'default',
-                                        fontWeight: 700,
-                                        fontSize: '1.2rem',
-                                        color: '#2c3e50',
-                                        backgroundColor: benchRd === 'Bench' ? '#c8e6c9' : '#ffcc80',
-                                        borderRight: '1px solid #e0e0e0',
-                                        transition: 'all 0.2s ease-in-out',
-                                        '&:hover': gradeTotal > 0 ? { 
-                                          backgroundColor: benchRd === 'Bench' ? '#a5d6a7' : '#ffb74d',
-                                          transform: 'scale(1.05)',
-                                          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                          zIndex: 1,
-                                          position: 'relative'
-                                        } : {}
-                                      }}
-                                      onClick={() => {
-                                        if (gradeTotal > 0) {
-                                          // Show all records for this Bench/RD + Grade across all statuses
-                                          let filteredData = data.filter(record => 
-                                            record['Bench/RD'] === benchRd && 
-                                            record['Grade'] === grade
-                                          );
+                              const rowTotal = Object.values(rowData).reduce((sum, count) => sum + count, 0);
 
-                                          setDetailsData(filteredData);
-                                          setDetailsTitle(`${benchRd} TOTAL - ${grade} (All Statuses - Total: ${gradeTotal})`);
-                                          setDetailsFilters({
-                                            'Bench/RD': benchRd,
-                                            'Grade': grade,
-                                            'Total': gradeTotal
-                                          });
-                                          setDetailsOpen(true);
-                                        }
+                              return (
+                                <tr key={`${benchRd}-${status}`}>
+                                  {statusIndex === 0 && (
+                                    <td 
+                                      className={`${benchRd === 'Bench' ? 'bench-rd-cell' : 'rd-cell'}`} 
+                                      rowSpan={totalRows}
+                                      style={{ 
+                                        verticalAlign: 'top',
+                                        textAlign: 'left',
+                                        padding: '12px 16px'
                                       }}
                                     >
+                                      <div style={{ 
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontWeight: '600',
+                                        fontSize: '14px'
+                                      }}>
+                                        <div style={{
+                                          width: '8px',
+                                          height: '8px',
+                                          borderRadius: '50%',
+                                          backgroundColor: benchRd === 'Bench' ? '#10b981' : '#f59e0b',
+                                          flexShrink: 0
+                                        }}></div>
+                              {benchRd}
+                                      </div>
+                                    </td>
+                                  )}
+                                  <td className="status-cell">
+                                    <div className="status-indicator">
+                                      <div className={`status-dot ${
+                                        status.includes('Client Blocked') ? 'red' :
+                                        status.includes('Internal Blocked') ? 'orange' :
+                                        status.includes('Available - Location') ? 'blue' :
+                                        status.includes('Available - ML') ? 'blue' :
+                                        status.includes('Available - High') ? 'purple' : 'gray'
+                                      }`}></div>
+                              {status}
+                                    </div>
+                                  </td>
+                                  {grades.map(grade => {
+                                    const count = rowData[grade] || 0;
+                                return (
+                                      <td 
+                                    key={grade} 
+                                        style={{ 
+                                          textAlign: 'center',
+                                      cursor: count > 0 ? 'pointer' : 'default',
+                                          padding: '8px'
+                                    }}
+                                    onClick={() => handleCountClick(benchRd, grade, status, count)}
+                                        title={count > 0 ? `Click to view ${count} records` : 'No records'}
+                                  >
+                                    {count > 0 ? (
+                                          <span 
+                                            className={`matrix-badge ${
+                                              count > 15 ? 'red' :
+                                              count > 10 ? 'orange' :
+                                              count > 5 ? 'blue' :
+                                              count > 2 ? 'green' : 'gray'
+                                            }`}
+                                            style={{
+                                              cursor: 'pointer',
+                                      transition: 'all 0.2s ease-in-out',
+                                              display: 'inline-block'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              if (count > 0) {
+                                                e.target.style.transform = 'scale(1.1)';
+                                                e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                                              }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.target.style.transform = 'scale(1)';
+                                              e.target.style.boxShadow = 'none';
+                                            }}
+                                          >
+                                            {count}
+                                          </span>
+                                        ) : (
+                                          <span className="matrix-badge zero">0</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                    {rowTotal > 0 ? (
+                                      <span className="matrix-badge green">{rowTotal}</span>
+                                    ) : (
+                                      <span className="matrix-badge zero">0</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          
+                          {/* Total row for this Bench/RD */}
+                            <tr className="total-row">
+                              <td colSpan={2} style={{ fontWeight: 'bold', paddingLeft: '16px' }}>
+                                  {benchRd} TOTAL
+                              </td>
+                              {grades.map(grade => {
+                                const gradeTotal = statusTypes.reduce((sum, status) => {
+                                  return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                }, 0);
+                                  return (
+                                  <td key={grade} style={{ textAlign: 'center', fontWeight: 'bold' }}>
                                       {gradeTotal > 0 ? (
-                                        <Box sx={{
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          minWidth: '36px',
-                                          height: '36px',
-                                          borderRadius: '18px',
-                                          backgroundColor: benchRd === 'Bench' ? '#4caf50' : '#ff9800',
-                                          color: 'white',
-                                          fontWeight: 700,
-                                          boxShadow: '0 3px 6px rgba(0,0,0,0.3)'
-                                        }}>
-                                          {gradeTotal}
-                                        </Box>
-                                      ) : (
-                                        gradeTotal
-                                      )}
-                                    </TableCell>
+                                      <span className="matrix-badge green">{gradeTotal}</span>
+                                    ) : (
+                                      <span className="matrix-badge zero">0</span>
+                                    )}
+                                  </td>
                                   );
                                 })}
-                                
-                                {/* Grand Total for this Bench/RD TOTAL row */}
-                                <TableCell 
-                                  align="center"
-                                  sx={{ 
-                                    cursor: totalForBenchRd > 0 ? 'pointer' : 'default',
-                                    fontWeight: 700,
-                                    fontSize: '1.3rem',
-                                    color: '#2c3e50',
-                                    backgroundColor: benchRd === 'Bench' ? '#c8e6c9' : '#ffcc80',
-                                    borderRight: 'none',
-                                    borderLeft: '3px solid #34495e',
-                                    transition: 'all 0.2s ease-in-out',
-                                    '&:hover': totalForBenchRd > 0 ? { 
-                                      backgroundColor: benchRd === 'Bench' ? '#a5d6a7' : '#ffb74d',
-                                      transform: 'scale(1.05)',
-                                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                      zIndex: 1,
-                                      position: 'relative'
-                                    } : {}
-                                  }}
-                                  onClick={() => {
-                                    if (totalForBenchRd > 0) {
-                                      // Show all records for this Bench/RD across all statuses and grades
-                                      let filteredData = data.filter(record => 
-                                        record['Bench/RD'] === benchRd
-                                      );
-
-                                      setDetailsData(filteredData);
-                                      setDetailsTitle(`${benchRd} TOTAL (All Statuses & Grades - Total: ${totalForBenchRd})`);
-                                      setDetailsFilters({
-                                        'Bench/RD': benchRd,
-                                        'Total': totalForBenchRd
-                                      });
-                                      setDetailsOpen(true);
-                                    }
-                                  }}
-                                >
-                                  {totalForBenchRd > 0 ? (
-                                    <Box sx={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      minWidth: '44px',
-                                      height: '44px',
-                                      borderRadius: '22px',
-                                      backgroundColor: '#34495e',
-                                      color: 'white',
-                                      fontWeight: 700,
-                                      boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
-                                    }}>
-                                      {totalForBenchRd}
-                                    </Box>
-                                  ) : (
-                                    totalForBenchRd
-                                  )}
-                                </TableCell>
-                          </TableRow>
-                            );
-                          })()}
-                        </>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Paper>
-              </Box>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                {grades.reduce((total, grade) => {
+                                  return total + statusTypes.reduce((sum, status) => {
+                                    return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
+                                  }, 0);
+                                }, 0)}
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  ) : null}
+                </div>
+              )}
+            </div>
             )}
 
+            {/* Details View */}
             {activeView === 'details' && (
-              <Box sx={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                overflow: 'hidden'
-              }}>
-
-                <Grid container spacing={1} sx={{ flex: 1, height: '100%', justifyContent: 'center' }}>
-                {['Bench', 'RD'].sort((a, b) => {
-                  // Sort Bench first, then RD
-                  if (a === 'Bench' && b === 'RD') return -1;
-                  if (a === 'RD' && b === 'Bench') return 1;
-                  return 0;
-                }).map(benchRd => (
-                    <Grid item xs={12} sm={5.8} key={benchRd} sx={{ height: '100%', minHeight: '220px' }}>
-                      <Paper sx={{ 
-                        borderRadius: 2,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        background: benchRd === 'Bench' 
-                          ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
-                          : 'linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%)',
-                        overflow: 'hidden',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        border: benchRd === 'Bench' ? '3px solid #4caf50' : '3px solid #ff9800'
+              <div className="card">
+                <div className="card-body">
+                  {dataToUse.length === 0 ? (
+                    <div style={{
+                      padding: '60px 20px',
+                      textAlign: 'center',
+                      backgroundColor: '#f9fafb',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      margin: '20px'
+                    }}>
+                      <div style={{
+                        fontSize: '48px',
+                        color: '#9ca3af',
+                        marginBottom: '16px'
                       }}>
-                        <Box sx={{ 
-                          p: 1.5, 
-                          backgroundColor: benchRd === 'Bench' ? '#4caf50' : '#ff9800',
-                          color: 'white',
-                          flexShrink: 0
-                        }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                            {benchRd} Resources
-                        </Typography>
-                        </Box>
-                        
-                        <Box sx={{ 
-                          flex: 1, 
+                        📊
+                      </div>
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 8px 0'
+                      }}>
+                        Please upload the excel
+                      </h3>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#6b7280',
+                        margin: '0'
+                      }}>
+                        Upload an Excel file to view the resource details
+                      </p>
+                    </div>
+                  ) : (
+                    <ResourceDetails 
+                      data={data} 
+                      statusCounts={statusCounts}
+                      onCountClick={handleCountClick}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Analytics View */}
+            {activeView === 'analytics' && (
+              <div className="card">
+                <div className="card-body">
+                  {dataToUse.length === 0 ? (
+                    <div style={{
+                      padding: '60px 20px',
+                      textAlign: 'center',
+                      backgroundColor: '#f9fafb',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      margin: '20px'
+                    }}>
+                      <div style={{
+                        fontSize: '48px',
+                        color: '#9ca3af',
+                        marginBottom: '16px'
+                      }}>
+                        📊
+                      </div>
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 8px 0'
+                      }}>
+                        Please upload the excel
+                      </h3>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#6b7280',
+                        margin: '0'
+                      }}>
+                        Upload an Excel file to view the analytics
+                      </p>
+                    </div>
+                  ) : (
+                    <Analytics data={data} />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Trends View */}
+            {activeView === 'trends' && (
+              <div className="card">
+                <div className="card-body">
+                  {dataToUse.length === 0 ? (
+                    <div style={{
+                      padding: '60px 20px',
+                      textAlign: 'center',
+                      backgroundColor: '#f9fafb',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      margin: '20px'
+                    }}>
+                      <div style={{
+                        fontSize: '48px',
+                        color: '#9ca3af',
+                        marginBottom: '16px'
+                      }}>
+                        📊
+                      </div>
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 8px 0'
+                      }}>
+                        Please upload the excel
+                      </h3>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#6b7280',
+                        margin: '0'
+                      }}>
+                        Upload an Excel file to view the trend analysis
+                      </p>
+                    </div>
+                  ) : (
+                    <TrendAnalysis data={data} />
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Details Modal */}
+      {detailsOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-primary)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-xl)',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            width: '100%',
                           overflow: 'hidden',
                           display: 'flex',
                           flexDirection: 'column'
                         }}>
-                          <TableContainer sx={{ 
-                            flex: 1,
-                            overflow: 'auto',
-                            borderRadius: 1,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            maxHeight: 'calc(100vh - 250px)',
-                            paddingBottom: '20px',
-                            '&::-webkit-scrollbar': {
-                              width: '8px',
-                              height: '8px'
-                            },
-                            '&::-webkit-scrollbar-track': {
-                              backgroundColor: '#f1f1f1',
-                              borderRadius: '4px'
-                            },
-                            '&::-webkit-scrollbar-thumb': {
-                              backgroundColor: '#c1c1c1',
-                              borderRadius: '4px',
-                              '&:hover': {
-                                backgroundColor: '#a8a8a8'
-                              }
-                            }
-                          }}>
-                            <Table 
-                              size="small" 
-                              stickyHeader
-                              sx={{
-                                height: '100%',
-                                '& .MuiTableBody-root': {
-                                  height: '100%'
-                                },
-                                '& .MuiTableRow-root': {
-                                  height: 'auto'
-                                }
-                              }}
-                            >
-                            <TableHead>
-                                <TableRow sx={{ backgroundColor: '#34495e' }}>
-                                  <TableCell sx={{ 
-                                    color: 'white', 
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    borderRight: '2px solid #2c3e50',
-                                    position: 'sticky',
-                                    top: 0,
-                                    left: 0,
-                                    zIndex: 3,
-                                    padding: '6px',
-                                    minWidth: '60px',
-                                    backgroundColor: '#34495e !important'
-                                  }}>
-                                    Grade
-                                  </TableCell>
-                                  {statusTypes.map((status, index) => (
-                                    <TableCell 
-                                      key={status} 
-                                      align="center"
-                                      sx={{ 
-                                        color: 'white', 
-                                        fontWeight: 600,
-                                        fontSize: '0.8rem',
-                                        backgroundColor: index % 2 === 0 ? '#34495e' : '#2c3e50',
-                                        borderRight: index === statusTypes.length - 1 ? 'none' : '1px solid #5a6c7d',
-                                        position: 'sticky',
-                                        top: 0,
-                                        zIndex: 1,
-                                        padding: '6px',
-                                        minWidth: '80px'
-                                      }}
-                                    >
-                                    {status.split(' - ')[0]}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {grades.map((grade, gradeIndex) => (
-                                  <TableRow 
-                                    key={grade}
-                                    sx={{ 
-                                      backgroundColor: gradeIndex % 2 === 0 ? '#f8f9fa' : '#ffffff',
-                                      height: '35px',
-
-                                      '&:hover': {
-                                        backgroundColor: '#e3f2fd',
-                                        transform: 'scale(1.01)',
-                                        transition: 'all 0.2s ease-in-out'
-                                      }
-                                    }}
-                                  >
-                                    <TableCell sx={{ 
-                                      fontWeight: 600,
-                                      fontSize: '0.9rem',
-                                      color: '#2c3e50',
-                                      borderRight: '2px solid #e0e0e0',
-                                      backgroundColor: grade.startsWith('A') ? '#e3f2fd' : 
-                                                       grade.startsWith('B') ? '#f3e5f5' : '#fff8e1',
-                                      position: 'sticky',
-                                      left: 0,
-                                      zIndex: 2,
-                                      padding: '6px',
-                                      minWidth: '60px'
-                                    }}>
-                                      {grade}
-                                    </TableCell>
-                                    {statusTypes.map((status, statusIndex) => {
-                                      const count = statusCounts[benchRd][grade]?.[status] || 0;
-                                      const getStatusColor = (status) => {
-                                        switch (status) {
-                                          case 'Available - ML return constraint':
-                                            return '#ff9800';
-                                          case 'Blocked':
-                                            return '#f44336';
-                                          case 'Client Blocked':
-                                            return '#ff5722';
-                                          case 'Available - Location Constraint':
-                                            return '#2196f3';
-                                          case 'Available - High Bench Ageing':
-                                            return '#9c27b0';
-                                          default:
-                                            return '#757575';
-                                        }
-                                      };
-                                      
-                                      return (
-                                        <TableCell 
-                                          key={status} 
-                                          align="center"
-                                          sx={{ 
-                                            cursor: count > 0 ? 'pointer' : 'default',
-                                            fontWeight: count > 0 ? 600 : 400,
-                                            fontSize: count > 0 ? '1rem' : '0.9rem',
-                                            color: count > 0 ? getStatusColor(status) : '#9e9e9e',
-                                            backgroundColor: count > 0 ? `${getStatusColor(status)}15` : 'transparent',
-                                            borderRight: statusIndex === statusTypes.length - 1 ? 'none' : '1px solid #e0e0e0',
-                                            transition: 'all 0.2s ease-in-out',
-                                            padding: '6px',
-                                            minWidth: '80px',
-                                            '&:hover': count > 0 ? { 
-                                              backgroundColor: `${getStatusColor(status)}25`,
-                                              transform: 'scale(1.05)',
-                                              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                              zIndex: 1,
-                                              position: 'relative'
-                                            } : {}
-                                          }}
-                                          onClick={() => handleCountClick(benchRd, grade, status, count)}
-                                        >
-                                          {count > 0 ? (
-                                            <Box sx={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              minWidth: '30px',
-                                              height: '30px',
-                                              borderRadius: '15px',
-                                              backgroundColor: getStatusColor(status),
-                                              color: 'white',
-                                              fontWeight: 700,
-                                              fontSize: '0.9rem',
-                                              boxShadow: '0 3px 6px rgba(0,0,0,0.3)'
-                                            }}>
-                                              {count}
-                                            </Box>
-                                          ) : (
-                                            <span style={{ fontSize: '1rem', color: '#ccc' }}>0</span>
-                                          )}
-                                        </TableCell>
-                                      );
-                                    })}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                        </Box>
-                      </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-              </Box>
-            )}
-
-            {activeView === 'analytics' && (
-              <Box sx={{ 
-                flex: 1, 
-                overflow: 'auto',
-                p: 1
+            <div style={{
+              padding: 'var(--spacing-lg)',
+              borderBottom: '1px solid var(--border-light)',
+                          display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{
+                margin: 0,
+                color: 'var(--text-primary)',
+                fontSize: 'var(--font-size-xl)',
+                fontWeight: 'var(--font-weight-bold)'
               }}>
-                <Analytics data={data} />
-              </Box>
-            )}
-
-            {activeView === 'trends' && (
-              <Box sx={{ 
-                flex: 1, 
-                overflow: 'auto',
-                p: 1
-              }}>
-                <TrendAnalysis data={data} />
-              </Box>
-            )}
-          </Box>
-        )}
-      </Box>
-      
-      <ResourceDetails
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        data={detailsData}
-        title={detailsTitle}
-        filters={detailsFilters}
-      />
-    </Box>
+                {detailsTitle} ({detailsData.length} records)
+              </h2>
+              <button
+                onClick={() => setDetailsOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary)',
+                  padding: '4px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{
+              flex: 1,
+              overflow: 'auto',
+              padding: 'var(--spacing-lg)'
+            }}>
+              {detailsData.length > 0 ? (
+                <div style={{
+                  display: 'grid',
+                  gap: 'var(--spacing-md)',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'
+                }}>
+                  {detailsData.map((record, index) => (
+                    <div key={index} style={{
+                      backgroundColor: 'var(--bg-tertiary)',
+                      padding: 'var(--spacing-md)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-light)'
+                    }}>
+                      <h4 style={{
+                        margin: '0 0 var(--spacing-sm) 0',
+                        color: 'var(--text-primary)',
+                        fontSize: 'var(--font-size-base)',
+                        fontWeight: 'var(--font-weight-semibold)'
+                      }}>
+                        {record['Name'] || 'Unknown'}
+                      </h4>
+                      <div style={{ display: 'grid', gap: '4px' }}>
+                        <div><strong>Grade:</strong> {record['Grade'] || 'N/A'}</div>
+                        <div><strong>Bench/RD:</strong> {record['Bench/RD'] || 'N/A'}</div>
+                        <div><strong>Status:</strong> {record['Deployment Status'] || 'N/A'}</div>
+                        <div><strong>Aging:</strong> {record['Aging'] || 'N/A'} days</div>
+                        <div><strong>Location:</strong> {record['Location'] || 'N/A'}</div>
+                        <div><strong>Relocation:</strong> {record['Relocation'] || 'N/A'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: 'var(--spacing-xl)',
+                  color: 'var(--text-secondary)'
+                }}>
+                  No records found for the selected criteria.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
 // Main App Component
 function App() {
-  const [dashboardData, setDashboardData] = useState([]);
-  const [dashboardError, setDashboardError] = useState(null);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
-  // File input handler for header button
-  const handleFileInputChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      handleFileUpload(file);
-    }
+  const handleDataLoaded = (newData) => {
+    setData(newData);
+    setError(null);
   };
 
-  const handleFileUpload = async (file) => {
-    setDashboardError(null);
-
-    try {
-      const data = await readExcelFile(file);
-      setDashboardData(data);
-    } catch (err) {
-      const errorMessage = `Error reading Excel file: ${err.message}`;
-      setDashboardError(errorMessage);
-    }
+  const handleError = (errorMessage) => {
+    setError(errorMessage);
+    setData(null);
   };
 
-  const readExcelFile = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          
-          // Look for the specific sheet
-          const sheetName = 'RD_BENCH_Tracker';
-          const worksheet = workbook.Sheets[sheetName];
-          
-          if (!worksheet) {
-            reject(new Error(`Sheet "${sheetName}" not found in the Excel file`));
-            return;
-          }
-          
-          // Convert sheet to JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          
-          if (jsonData.length < 2) {
-            reject(new Error('Excel file is empty or has no data rows'));
-            return;
-          }
-          
-          // Convert to array of objects with headers
-          const headers = jsonData[0];
-          const rows = jsonData.slice(1);
-          
-          const processedData = rows.map(row => {
-            const obj = {};
-            headers.forEach((header, index) => {
-              obj[header] = row[index] || '';
-            });
-            return obj;
-          });
-          
-          resolve(processedData);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsArrayBuffer(file);
-    });
-  };
+  // No sample data loaded by default - user must upload Excel file
 
   return (
-    <Router>
-      <Box sx={{ 
-        height: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column',
-        overflow: 'hidden'
-      }}>
-        <AppBar position="static" sx={{ 
-          background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-          flexShrink: 0
-        }}>
-          <Toolbar sx={{ minHeight: '56px !important' }}>
-            <Typography variant="h6" component="div" sx={{ 
-              flexGrow: 1,
-              fontWeight: 600,
-              color: 'white',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              fontSize: { xs: '1rem', sm: '1.25rem' }
-            }}>
-              Bench/RD Tracker Dashboard
-            </Typography>
-            <Button
-              variant="outlined"
-              onClick={() => document.getElementById('header-file-input').click()}
-              sx={{
-                borderRadius: 2,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                px: { xs: 2, sm: 3 },
-                py: 1,
-                borderColor: 'rgba(255,255,255,0.7)',
-                color: 'white',
-                '&:hover': {
-                  borderColor: 'white',
-                  backgroundColor: 'rgba(255,255,255,0.1)'
-                }
-              }}
-            >
-              📁 Select Excel File
-            </Button>
-            <input
-              id="header-file-input"
-              type="file"
-              hidden
-              accept=".xlsx,.xls"
-              onChange={handleFileInputChange}
-            />
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+    <div className="App">
           <Dashboard 
-            data={dashboardData}
-            error={dashboardError}
-            onDataLoaded={setDashboardData}
-            onError={setDashboardError}
-          />
-        </Box>
-      </Box>
-    </Router>
+        data={data} 
+        error={error} 
+        onDataLoaded={handleDataLoaded} 
+        onError={handleError} 
+      />
+    </div>
   );
 }
 

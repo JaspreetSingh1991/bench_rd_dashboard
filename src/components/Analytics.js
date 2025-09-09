@@ -43,7 +43,10 @@ const Analytics = ({ data }) => {
         return benchRd === 'Bench' || (benchRd && benchRd.toLowerCase().includes('ml return'));
       }).length,
       rdCount: data.filter(record => record['Bench/RD'] === 'RD').length,
-      availableCount: data.filter(record => record['Deployment Status'] === 'Avail_BenchRD').length,
+      availableCount: data.filter(record => {
+        const deploymentStatus = record['Deployment Status'] || '';
+        return deploymentStatus.toLowerCase().includes('available');
+      }).length,
       internalBlockedCount: data.filter(record => record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('internal blocked')).length,
       clientBlockedCount: data.filter(record => record['Deployment Status'] && record['Deployment Status'].toLowerCase().includes('client blocked')).length,
       mlReturnConstraintCount: data.filter(record => {
@@ -76,7 +79,7 @@ const Analytics = ({ data }) => {
 
     // Aging analysis
     const agingData = data
-      .filter(record => record['Deployment Status'] === 'Avail_BenchRD')
+      .filter(record => (record['Deployment Status'] || '').toLowerCase().includes('available'))
       .map(record => ({
         grade: record['Grade'],
         aging: Number(record['Aging']) || 0,
@@ -136,19 +139,22 @@ const Analytics = ({ data }) => {
   }));
 
   return (
-    <Box sx={{ 
+    <div style={{ 
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      <Typography variant="h5" gutterBottom sx={{ 
+      <h2 style={{ 
         flexShrink: 0,
-        mb: 1
+        marginBottom: '1rem',
+        color: 'var(--text-primary)',
+        fontSize: 'var(--font-size-2xl)',
+        fontWeight: 'var(--font-weight-bold)'
       }}>
         Analytics Dashboard
-      </Typography>
-      <Box sx={{ 
+      </h2>
+      <div style={{ 
         flex: 1, 
         overflow: 'auto'
       }}>
@@ -367,8 +373,8 @@ const Analytics = ({ data }) => {
           </Grid>
         </Grid>
       </Paper>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

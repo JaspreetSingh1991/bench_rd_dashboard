@@ -159,19 +159,22 @@ const TrendAnalysis = ({ data }) => {
   };
 
   return (
-    <Box sx={{ 
+    <div style={{ 
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      <Typography variant="h5" gutterBottom sx={{ 
+      <h2 style={{ 
         flexShrink: 0,
-        mb: 1
+        marginBottom: '1rem',
+        color: 'var(--text-primary)',
+        fontSize: 'var(--font-size-2xl)',
+        fontWeight: 'var(--font-weight-bold)'
       }}>
         Trend Analysis & Insights
-      </Typography>
-      <Box sx={{ 
+      </h2>
+      <div style={{ 
         flex: 1, 
         overflow: 'auto'
       }}>
@@ -348,8 +351,8 @@ const TrendAnalysis = ({ data }) => {
           </Grid>
         </Grid>
       </Paper>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

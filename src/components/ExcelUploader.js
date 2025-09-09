@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Box, 
-  Button, 
-  Typography, 
-  Alert, 
-  CircularProgress,
-  Paper
-} from '@mui/material';
 import * as XLSX from 'xlsx';
-import { generateSampleData } from '../utils/businessLogic';
+// No sample data import needed
 
 const ExcelUploader = ({ onDataLoaded, onError }) => {
   const [loading, setLoading] = useState(false);
@@ -24,9 +16,8 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
         const data = await window.electronAPI.loadExcelFile();
         onDataLoaded(data);
       } else {
-        // Fallback to sample data for web version
-        const sampleData = generateSampleData();
-        onDataLoaded(sampleData);
+        // No fallback data - user must upload Excel file
+        onError('Please upload an Excel file to view data');
       }
     } catch (err) {
       const errorMessage = `Error loading file: ${err.message}`;
@@ -134,70 +125,90 @@ const ExcelUploader = ({ onDataLoaded, onError }) => {
 
 
   return (
-    <Paper sx={{ 
-      p: 1, 
-      mb: 1,
-      borderRadius: 2,
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-    }}>
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 2, 
-        flexWrap: 'wrap', 
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        {window.electronAPI && (
-          <Button
-            variant="outlined"
-            onClick={handleAutoLoad}
-            disabled={loading}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              fontSize: '0.9rem',
-              px: 3,
-              py: 1,
-              borderColor: '#34495e',
-              color: '#34495e',
-              '&:hover': {
-                borderColor: '#2c3e50',
-                backgroundColor: 'rgba(52, 73, 94, 0.08)'
-              },
-              '&:disabled': {
-                borderColor: '#bdbdbd',
-                color: '#bdbdbd'
-              }
-            }}
-          >
-            🔄 Auto Load from Documents
-          </Button>
-        )}
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      {window.electronAPI && (
+        <button
+          className="btn btn-outline"
+          onClick={handleAutoLoad}
+          disabled={loading}
+          style={{ 
+            padding: '8px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+            border: '1px solid var(--primary-500)',
+            backgroundColor: 'transparent',
+            color: 'var(--primary-500)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease-in-out'
+          }}
+        >
+          🔄 Auto Load
+        </button>
+      )}
       
       <input
         id="file-input"
         type="file"
-        hidden
+        style={{ display: 'none' }}
         accept=".xlsx,.xls"
         onChange={handleFileUpload}
       />
       
+      <button
+        className="btn btn-primary"
+        onClick={() => document.getElementById('file-input').click()}
+        disabled={loading}
+        style={{ 
+          padding: '8px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+          border: '1px solid var(--primary-500)',
+          backgroundColor: 'var(--primary-500)',
+          color: 'white',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease-in-out'
+        }}
+      >
+        📁 Upload Excel
+      </button>
+      
       {loading && (
-        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-          <CircularProgress size={16} sx={{ mr: 1 }} />
-          <Typography variant="body2" fontSize="0.875rem">Loading...</Typography>
-        </Box>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ 
+            width: '16px', 
+            height: '16px', 
+            border: '2px solid var(--primary-200)',
+            borderTop: '2px solid var(--primary-500)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Loading...</span>
+        </div>
       )}
       
       {error && (
-        <Alert severity="error" sx={{ mt: 1, fontSize: '0.875rem' }}>
+        <div style={{ 
+          padding: '8px 12px', 
+          backgroundColor: 'var(--error-100)', 
+          color: 'var(--error-600)', 
+          borderRadius: '6px',
+          fontSize: '0.875rem',
+          border: '1px solid var(--error-200)',
+          maxWidth: '300px'
+        }}>
           {error}
-        </Alert>
+        </div>
       )}
-      </Box>
-    </Paper>
+      
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
   );
 };
 

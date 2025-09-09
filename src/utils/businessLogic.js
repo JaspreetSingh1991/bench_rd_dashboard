@@ -89,9 +89,12 @@ export const generateSampleData = () => {
   const benchRdTypes = ['Bench', 'RD'];
   const grades = ['B1', 'B2', 'C1', 'C2', 'D1', 'D2'];
   const deploymentStatuses = [
-    'Avail_BenchRD',
-    'Blocked SPE',
-    'Blocked Outside SPE'
+    'Available - No Constraints',
+    'Internal Blocked - Resource Unavailable',
+    'Client Blocked - Project Hold',
+    'Available - Location Constraint',
+    'Available - ML return constraint',
+    'Available - High Aging'
   ];
   
   const sampleData = [];
@@ -117,6 +120,49 @@ export const generateSampleData = () => {
           'Match 2': match2,
           'Match 3': match3,
           'Location Constraint': locationConstraint,
+          'Relocation': locationConstraint === 'Yes' ? 'Yes' : '', // Empty for Location Constraint logic
+          'Aging': aging
+        });
+      }
+    });
+  });
+  
+  // Add some ML Return records for Bench
+  grades.forEach(grade => {
+    const mlRecordCount = Math.floor(Math.random() * 3) + 1; // 1-3 ML records per grade
+    
+    for (let i = 0; i < mlRecordCount; i++) {
+      const aging = Math.floor(Math.random() * 120) + 30;
+      sampleData.push({
+        'Bench/RD': 'ML Return - Bench',
+        'Grade': grade,
+        'Deployment Status': 'Available - ML Return Constraint',
+        'Match 1': 'ML Case',
+        'Match 2': 'ML Case',
+        'Match 3': 'ML Case',
+        'Location Constraint': 'No',
+        'Relocation': '', // Empty for ML return constraint
+        'Aging': aging
+      });
+    }
+  });
+  
+  // Add some high aging records (>90 days) for both Bench and RD
+  benchRdTypes.forEach(benchRd => {
+    grades.forEach(grade => {
+      const highAgingCount = Math.floor(Math.random() * 2) + 1; // 1-2 high aging records per grade
+      
+      for (let i = 0; i < highAgingCount; i++) {
+        const aging = Math.floor(Math.random() * 60) + 91; // 91-150 days
+        sampleData.push({
+          'Bench/RD': benchRd,
+          'Grade': grade,
+          'Deployment Status': 'Available - High Aging 90+',
+          'Match 1': 'Other Case',
+          'Match 2': 'Other Case',
+          'Match 3': 'Other Case',
+          'Location Constraint': 'No',
+          'Relocation': '', // Empty for high aging
           'Aging': aging
         });
       }
