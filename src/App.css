@@ -982,7 +982,8 @@
   height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
-  margin-top: 60px;
+  margin-top: 8px;
+  overflow-y: auto;
 }
 
 .analytics-main-card,
@@ -992,33 +993,13 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding: 16px;
-  max-height: calc(100vh - 120px);
+  height: auto;
+  min-height: 0;
 }
 
-/* Custom scrollbar for main cards */
-.analytics-main-card::-webkit-scrollbar,
-.trends-main-card::-webkit-scrollbar {
-  width: 6px;
-}
-
-.analytics-main-card::-webkit-scrollbar-track,
-.trends-main-card::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.analytics-main-card::-webkit-scrollbar-thumb,
-.trends-main-card::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.analytics-main-card::-webkit-scrollbar-thumb:hover,
-.trends-main-card::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+/* Custom scrollbar for main cards - removed since no internal scrolling */
 
 .analytics-header,
 .trends-header {
@@ -1152,6 +1133,7 @@
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
+  overflow: visible;
 }
 
 .chart-card {
@@ -1162,6 +1144,8 @@
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
   margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
 }
 
 .chart-card:hover {
@@ -1174,7 +1158,7 @@
 }
 
 .chart-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .chart-header h3 {
@@ -1191,8 +1175,17 @@
 }
 
 .chart-container {
-  height: 250px;
+  height: 300px;
   width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-container svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 /* Insights Section */
@@ -1329,14 +1322,17 @@
   .analytics-container,
   .trends-container {
     padding: 8px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 100px);
+    margin-top: 4px;
+    overflow-y: auto;
   }
   
   .analytics-main-card,
   .trends-main-card {
     padding: 12px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
+    height: auto;
+    overflow: visible;
+    min-height: 0;
   }
   
   .analytics-metrics-grid,
@@ -1356,7 +1352,16 @@
   }
   
   .chart-container {
-    height: 200px;
+    height: 240px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .chart-container svg {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
   }
   
   .metric-card,
