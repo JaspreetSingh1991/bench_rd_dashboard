@@ -519,6 +519,7 @@ const Analytics = ({ data }) => {
                     <tr>
                       <th>Resource Name</th>
                       <th>Grade</th>
+                      <th>Skill Set</th>
                       <th>Status</th>
                       <th>Location</th>
                       <th>Aging</th>
@@ -533,6 +534,11 @@ const Analytics = ({ data }) => {
                         </td>
                         <td>
                           <span className="modal-tag modal-tag-grade">{record['Grade'] || 'N/A'}</span>
+                        </td>
+                        <td>
+                          <span className="modal-tag modal-tag-skill">
+                            {record['Skill Set'] || record['Skills'] || record['Skill'] || 'N/A'}
+                          </span>
                         </td>
                         <td>
                           <span className={`modal-tag modal-tag-status-${(record['Deployment Status'] || '').toLowerCase().replace(/\s+/g, '-')}`}>
