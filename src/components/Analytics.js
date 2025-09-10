@@ -326,9 +326,9 @@ const Analytics = ({ data }) => {
                   data={benchRdData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={5}
+                  innerRadius={30}
+                  outerRadius={100}
+                  paddingAngle={6}
                   dataKey="value"
                 >
                   {benchRdData.map((entry, index) => (
@@ -393,8 +393,8 @@ const Analytics = ({ data }) => {
                   data={constraintData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
+                  innerRadius={30}
+                  outerRadius={90}
                   paddingAngle={5}
                   dataKey="value"
                 >

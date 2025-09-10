@@ -363,8 +363,8 @@ const TrendAnalysis = ({ data }) => {
                   data={statusTrendData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
+                  innerRadius={30}
+                  outerRadius={80}
                   paddingAngle={5}
                   dataKey="count"
                 >
@@ -414,8 +414,8 @@ const TrendAnalysis = ({ data }) => {
                   data={constraintData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
+                  innerRadius={30}
+                  outerRadius={90}
                   paddingAngle={5}
                   dataKey="value"
                 >

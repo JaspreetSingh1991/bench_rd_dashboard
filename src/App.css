@@ -1026,22 +1026,26 @@
 .analytics-metrics-grid,
 .trends-insights-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   margin-bottom: 24px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .metric-card,
 .insight-card {
   background: white;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  min-width: 160px;
+  flex-shrink: 0;
 }
 
 .metric-card:hover,
@@ -1208,8 +1212,8 @@
 
 .insights-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
 /* Tables */
