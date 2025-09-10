@@ -80,10 +80,8 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
               <TableRow>
                 <TableCell>Bench/RD</TableCell>
                 <TableCell>Grade</TableCell>
-                <TableCell>Deployment Status</TableCell>
                 <TableCell>Match 1</TableCell>
                 <TableCell>Match 2</TableCell>
-                <TableCell>Match 3</TableCell>
                 <TableCell>Location Constraint</TableCell>
                 <TableCell>Aging (days)</TableCell>
               </TableRow>
@@ -99,13 +97,6 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
                   <TableCell>{record['Bench/RD']}</TableCell>
                   <TableCell>{record['Grade']}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={record['Deployment Status']}
-                      size="small"
-                      color={getStatusColor(record['Deployment Status'])}
-                    />
-                  </TableCell>
-                  <TableCell>
                     {record['Match 1']?.toLowerCase().includes('ml case') ? (
                       <Chip label="ML Case" size="small" color="warning" />
                     ) : (
@@ -117,13 +108,6 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
                       <Chip label="ML Case" size="small" color="warning" />
                     ) : (
                       record['Match 2'] || '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {record['Match 3']?.toLowerCase().includes('ml case') ? (
-                      <Chip label="ML Case" size="small" color="warning" />
-                    ) : (
-                      record['Match 3'] || '-'
                     )}
                   </TableCell>
                   <TableCell>

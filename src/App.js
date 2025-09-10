@@ -16,6 +16,104 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
   const [, setDetailsFilters] = useState({});
   const tableContainerRef = React.useRef(null);
 
+  // Function to get unique color for Bench/RD values
+  const getBenchRdColor = (benchRd) => {
+    const colors = {
+      'Bench': '#6b7280',      // Grey
+      'RD': '#f59e0b',         // Orange
+      'ML Return': '#8b5cf6',  // Purple
+      'Contract': '#ef4444',   // Red
+      'Permanent': '#06b6d4',  // Cyan
+      'Temporary': '#f97316',  // Orange-red
+      'Consultant': '#84cc16', // Lime
+      'Intern': '#ec4899'      // Pink
+    };
+    
+    // Return specific color if defined, otherwise generate a unique color
+    if (colors[benchRd]) {
+      return colors[benchRd];
+    }
+    
+    // Generate a unique color based on the string value
+    const hash = benchRd.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 50%)`;
+  };
+
+  // Function to get badge styling for Bench/RD values
+  const getBenchRdBadgeStyle = (benchRd) => {
+    const badgeStyles = {
+      'Bench': {
+        backgroundColor: '#FFF8E1',  // Light creamy yellow
+        color: '#8D6E63',           // Dark brown
+        borderColor: '#D4AF37'      // Gold border
+      },
+      'RD': {
+        backgroundColor: '#E3F2FD',  // Light blue
+        color: '#1565C0',           // Dark blue
+        borderColor: '#1976D2'      // Blue border
+      },
+      'Non Deployable': {
+        backgroundColor: '#FFF3E0',  // Light orange
+        color: '#E65100',           // Dark orange
+        borderColor: '#FF9800'      // Orange border
+      },
+      'Contract': {
+        backgroundColor: '#FFEBEE',  // Light red
+        color: '#C62828',           // Dark red
+        borderColor: '#D32F2F'      // Red border
+      },
+      'Consultant': {
+        backgroundColor: '#E0F2F1',  // Light teal
+        color: '#00695C',           // Dark teal
+        borderColor: '#00796B'      // Teal border
+      },
+      'Temporary': {
+        backgroundColor: '#FFF3E0',  // Light orange
+        color: '#E65100',           // Dark orange
+        borderColor: '#FF9800'      // Orange border
+      },
+      'RDjj': {
+        backgroundColor: '#F1F8E9',  // Light lime
+        color: '#558B2F',           // Dark lime
+        borderColor: '#689F38'      // Lime border
+      },
+      'RDSAMple': {
+        backgroundColor: '#FCE4EC',  // Light pink
+        color: '#AD1457',           // Dark pink
+        borderColor: '#C2185B'      // Pink border
+      }
+    };
+    
+    // Return specific badge style if defined, otherwise generate a unique style
+    if (badgeStyles[benchRd]) {
+      return badgeStyles[benchRd];
+    }
+    
+    // Generate a unique badge style based on the string value
+    const hash = benchRd.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    let hue = Math.abs(hash) % 360;
+    
+    // Replace purple colors (hue around 270-300) with orange (hue around 30-60)
+    if (hue >= 270 && hue <= 300) {
+      hue = 30 + (hue - 270) * 0.5; // Map purple range to orange range
+    }
+    
+    return {
+      backgroundColor: `hsl(${hue}, 30%, 95%)`,
+      color: `hsl(${hue}, 70%, 30%)`,
+      borderColor: `hsl(${hue}, 50%, 50%)`
+    };
+  };
+
   // Update dataLoaded when data changes and switch to matrix view
   React.useEffect(() => {
     if (data && data.length > 0) {
@@ -251,7 +349,6 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
         'Client Blocked': 0,
         'Internal Blocked': 0,
         'Available - Location Constraint': 0,
-        'Available - ML return constraint': 0,
         'Available - High Bench Ageing 90+': 0
       };
     }
@@ -390,11 +487,16 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                         if (a === 'RD' && b === 'Bench') return 1;
                         return 0;
                       }).map((benchRd, benchIndex) => {
-                        const statusTypes = [
+                        const statusTypes = benchRd === 'Bench' ? [
                           'Client Blocked',
                           'Internal Blocked',
                           'Available - Location Constraint',
                           'Available - ML return constraint',
+                          'Available - High Bench Ageing 90+'
+                        ] : [
+                          'Client Blocked',
+                          'Internal Blocked',
+                          'Available - Location Constraint',
                           'Available - High Bench Ageing 90+'
                         ];
                         const totalRows = statusTypes.length + 1; // +1 for the total row
@@ -416,31 +518,31 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                       className={`${benchRd === 'Bench' ? 'bench-rd-cell' : 'rd-cell'}`} 
                                       rowSpan={totalRows}
                                       style={{ 
-                                        verticalAlign: 'top',
-                                        textAlign: 'left',
-                                        padding: '12px 16px'
+                                        verticalAlign: 'middle',
+                                        textAlign: 'center',
+                                        padding: '6px 16px',
+                                        backgroundColor: getBenchRdBadgeStyle(benchRd).backgroundColor
                                       }}
                                     >
-                                      <div style={{ 
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        fontWeight: '600',
-                                        fontSize: '14px'
-                                      }}>
-                                        <div style={{
-                                          width: '8px',
-                                          height: '8px',
-                                          borderRadius: '50%',
-                                          backgroundColor: benchRd === 'Bench' ? '#10b981' : '#f59e0b',
-                                          flexShrink: 0
-                                        }}></div>
-                              {benchRd}
-                                      </div>
+                                      <span 
+                                        style={{
+                                          display: 'inline-block',
+                                          padding: '4px 8px',
+                                          borderRadius: '6px',
+                                          fontSize: '11px',
+                                          fontWeight: '500',
+                                          textAlign: 'center',
+                                          minWidth: '80px',
+                                          border: '1px solid',
+                                          ...getBenchRdBadgeStyle(benchRd)
+                                        }}
+                                      >
+                                        {benchRd}
+                                      </span>
                                     </td>
                                   )}
                                   <td className="status-cell">
-                              {status}
+                                    {status}
                                   </td>
                                   {grades.map(grade => {
                                     const count = rowData[grade] || 0;
@@ -450,7 +552,7 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                                         style={{ 
                                           textAlign: 'center',
                                       cursor: count > 0 ? 'pointer' : 'default',
-                                          padding: '8px'
+                                          padding: '4px 8px'
                                     }}
                                     onClick={() => handleCountClick(benchRd, grade, status, count)}
                                         title={count > 0 ? `Click to view ${count} records` : 'No records'}
@@ -708,8 +810,8 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                       <tr>
                         <th>Resource</th>
                         <th>Grade</th>
-                        <th>Type</th>
-                        <th>Status</th>
+                        <th>Match 1</th>
+                        <th>Match 2</th>
                         <th>Aging</th>
                         <th>Location</th>
                         <th>Relocation</th>
@@ -791,13 +893,13 @@ const Dashboard = ({ data, error, onDataLoaded, onError }) => {
                               </span>
                             </td>
                             <td>
-                              <span className={`modal-tag ${getTypeTagClass(record['Bench/RD'])}`}>
-                                {record['Bench/RD'] || 'N/A'}
+                              <span className="modal-tag modal-tag-match">
+                                {record['Match 1']?.toLowerCase().includes('ml case') ? 'ML Case' : (record['Match 1'] || 'N/A')}
                               </span>
                             </td>
                             <td>
-                              <span className={`modal-tag ${getStatusTagClass(record['Deployment Status'])}`}>
-                                {record['Deployment Status'] || 'N/A'}
+                              <span className="modal-tag modal-tag-match">
+                                {record['Match 2']?.toLowerCase().includes('ml case') ? 'ML Case' : (record['Match 2'] || 'N/A')}
                               </span>
                             </td>
                             <td>

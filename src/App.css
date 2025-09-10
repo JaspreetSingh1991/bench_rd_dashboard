@@ -1,7 +1,7 @@
 /* Figma Light Theme Dashboard Styles */
 .App {
   min-height: 100vh;
-  background-color: var(--bg-secondary);
+  background-color: #ffffff;
   font-family: var(--font-family);
 }
 
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-xl);
+  padding: 4px var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -31,8 +31,8 @@
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
   border-radius: var(--radius-lg);
   display: flex;
@@ -40,7 +40,7 @@
   justify-content: center;
   color: white;
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
 }
 
 .logo-text {
@@ -49,7 +49,7 @@
 }
 
 .logo-title {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   margin: 0;
@@ -57,7 +57,7 @@
 }
 
 .logo-subtitle {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
   margin: 0;
   line-height: 1.2;
@@ -148,20 +148,21 @@
 
 /* Navigation Styles */
 .nav-tabs {
-  background-color: var(--bg-primary);
-  border-bottom: 1px solid var(--border-light);
+  background-color: #f3f4f6;
+  border: 1px solid #6b7280;
+  border-radius: 8px;
   padding: 0;
   margin: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: sticky;
-  top: 80px;
+  top: 40px;
   z-index: 50;
 }
 
 .tab-list {
   display: flex;
   background-color: transparent;
-  border-radius: 0;
+  border-radius: 8px;
   padding: 0;
   gap: 0;
   max-width: 1200px;
@@ -170,8 +171,8 @@
 
 .tab-button {
   flex: 1;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   background-color: transparent;
@@ -181,7 +182,7 @@
   transition: all 0.2s ease-in-out;
   text-align: center;
   position: relative;
-  min-height: 40px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,10 +194,11 @@
 }
 
 .tab-button.active {
-  background-color: var(--bg-primary);
+  background-color: #f3f4f6;
   color: #1a1a1a;
-  border-bottom-color: #1a1a1a;
+  border-bottom-color: #6b7280;
   font-weight: 600;
+  border-radius: 8px;
 }
 
 .tab-button.active::after {
@@ -209,7 +211,27 @@
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 6px solid #1a1a1a;
+  border-bottom: 6px solid #6b7280;
+}
+
+.tab-button:first-child.active {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.tab-button:last-child.active {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.tab-button:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.tab-button:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 /* Button Styles */
@@ -389,24 +411,24 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 100%; /* Full height of parent container */
   overflow: visible; /* Allow content to overflow and enable page scroll */
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-xs);
 }
 
 .matrix-header {
   background-color: var(--gray-50);
-  padding: 16px 20px;
+  padding: 8px 20px;
   border-bottom: 1px solid var(--border-light);
 }
 
 .matrix-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
 }
 
 .matrix-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin: 0;
 }
@@ -425,10 +447,11 @@
   color: var(--text-primary);
   font-weight: 600;
   text-align: center;
-  padding: 12px 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--border-light);
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
 .matrix-table th:first-child {
@@ -441,13 +464,17 @@
   padding-left: 16px;
 }
 
+.matrix-table td:first-child {
+  font-size: 10px;
+}
+
 
 .matrix-table td {
-  padding: 8px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--border-light);
   text-align: center;
   vertical-align: middle;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .matrix-table tbody tr:hover {
@@ -458,14 +485,15 @@
   border-bottom: 1px solid var(--border-light);
 }
 
-/* Bench/RD Grouping Cells - Light Green for Bench */
+/* Bench/RD Grouping Cells - Light Grey for Bench */
 .matrix-table .bench-rd-cell {
-  background-color: #f0fdf4; /* Light green background */
+  background-color: #f3f4f6; /* Light grey background */
   font-weight: 600;
   color: var(--text-primary);
   text-align: left;
   padding-left: 16px;
   position: relative;
+  font-size: 10px;
 }
 
 /* RD Grouping Cells - Light Orange/Beige */
@@ -476,6 +504,7 @@
   text-align: left;
   padding-left: 16px;
   position: relative;
+  font-size: 10px;
 }
 
 .matrix-table .bench-rd-cell.rd-group {
@@ -488,7 +517,9 @@
   text-align: left;
   padding-left: 16px;
   border-right: none;
+  font-size: 11px;
 }
+
 
 /* Status Indicators */
 .status-indicator {
@@ -520,8 +551,22 @@
   background-color: var(--status-purple);
 }
 
+
 .status-dot.green {
   background-color: var(--status-green);
+}
+
+.status-badge-non-deployable {
+  display: inline-block;
+  background-color: #FFF8E1;
+  color: #8D6E63;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #FFF8E1;
+  text-align: center;
+  min-width: 80px;
 }
 
 .status-dot.gray {
@@ -541,23 +586,26 @@
 }
 
 .matrix-table .total-row .bench-rd-cell {
-  background-color: #dcfce7; /* Light green for Bench total */
+  background-color: #e5e7eb; /* Light grey for Bench total */
+  font-size: 10px;
 }
 
 .matrix-table .total-row .bench-rd-cell.rd-group {
   background-color: #fef3c7; /* Light orange for RD total */
+  font-size: 10px;
 }
 
 /* Count Styles for Matrix - Clean Text Display */
 .matrix-badge {
   display: inline-block;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 600;
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  padding: 2px 4px;
+  padding: 1px 4px;
   border-radius: 2px;
+  line-height: 1.2;
 }
 
 .matrix-badge:hover {
@@ -617,7 +665,7 @@
 }
 
 .modal-header {
-  padding: 24px 32px;
+  padding: 12px 20px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -628,19 +676,19 @@
 .modal-title {
   margin: 0;
   color: #1a1a1a;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .modal-count-badge {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 11px;
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
@@ -670,7 +718,7 @@
 .modal-content {
   flex: 1;
   overflow: auto;
-  padding: 32px;
+  padding: 8px 16px 16px 16px;
   background-color: #fafbfc;
 }
 
@@ -685,7 +733,7 @@
 .modal-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 11px;
 }
 
 .modal-table thead {
@@ -694,13 +742,13 @@
 }
 
 .modal-table th {
-  padding: 16px 12px;
+  padding: 8px 6px;
   text-align: left;
   font-weight: 700;
   color: #374151;
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   border-right: 1px solid #e5e7eb;
   white-space: nowrap;
 }
@@ -723,7 +771,7 @@
 }
 
 .modal-table td {
-  padding: 16px 12px;
+  padding: 6px 6px;
   vertical-align: top;
   border-right: 1px solid #f3f4f6;
   color: #374151;
@@ -736,8 +784,8 @@
 .modal-resource-name {
   font-weight: 700;
   color: #1a1a1a;
-  font-size: 15px;
-  margin-bottom: 4px;
+  font-size: 12px;
+  margin-bottom: 2px;
 }
 
 .modal-resource-id {
@@ -748,13 +796,13 @@
 
 .modal-tag {
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 2px 4px 2px 0;
+  letter-spacing: 0.2px;
+  margin: 1px 2px 1px 0;
   white-space: nowrap;
 }
 
@@ -789,9 +837,9 @@
 }
 
 .modal-tag-bench {
-  background-color: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
 
 .modal-tag-rd {
@@ -836,6 +884,14 @@
   border: 1px solid #c7d2fe;
 }
 
+.modal-tag-match {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-size: 8px;
+  padding: 1px 3px;
+}
+
 .modal-tag-container {
   display: flex;
   flex-wrap: wrap;
@@ -876,15 +932,15 @@
   }
   
   .modal-header {
-    padding: 20px;
+    padding: 8px 12px;
   }
   
   .modal-title {
-    font-size: 20px;
+    font-size: 16px;
   }
   
   .modal-content {
-    padding: 20px;
+    padding: 4px 12px 12px 12px;
   }
   
   .modal-table-container {
@@ -897,13 +953,13 @@
   
   .modal-table th,
   .modal-table td {
-    padding: 12px 8px;
-    font-size: 13px;
+    padding: 4px 4px;
+    font-size: 10px;
   }
   
   .modal-tag {
-    font-size: 10px;
-    padding: 3px 6px;
+    font-size: 8px;
+    padding: 1px 3px;
   }
   
   .modal-tag-container {
@@ -1418,9 +1474,9 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .header-content {
-    padding: var(--spacing-sm);
+    padding: 4px;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 4px;
   }
 
   .logo-section {
@@ -1472,7 +1528,7 @@
   }
 
   .matrix-table {
-    font-size: var(--font-size-xs);
+    font-size: 10px;
   }
 
   .matrix-table th,
@@ -1481,9 +1537,10 @@
   }
 
   .matrix-badge {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 2px 4px;
+    padding: 1px 4px;
+    line-height: 1.2;
   }
 
   .nav-tabs {
@@ -1491,10 +1548,10 @@
   }
 
   .tab-button {
-    padding: 6px 10px;
-    font-size: 13px;
+    padding: 4px 8px;
+    font-size: 11px;
     font-weight: 600;
-    min-height: 36px;
+    min-height: 28px;
   }
 
   .matrix-container {
