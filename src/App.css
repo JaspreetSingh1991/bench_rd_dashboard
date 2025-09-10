@@ -283,6 +283,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--spacing-xl) var(--spacing-2xl);
+  min-height: calc(100vh - 140px); /* Ensure full height minus header and nav */
 }
 
 /* Summary Cards */
@@ -386,8 +387,8 @@
   border: 1px solid var(--border-light);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: calc(100vh - 180px); /* Use most of available height with compact nav */
-  overflow-y: auto;
+  height: 100%; /* Full height of parent container */
+  overflow: visible; /* Allow content to overflow and enable page scroll */
   margin-top: var(--spacing-md);
 }
 
@@ -416,6 +417,7 @@
   font-size: 14px;
   background-color: var(--bg-primary);
   height: auto; /* Auto height based on content */
+  min-height: 100%; /* Ensure it takes full height of container */
 }
 
 .matrix-table th {
@@ -1510,7 +1512,8 @@
   }
 
   .matrix-container {
-    height: calc(100vh - 200px);
+    height: 100%;
+    overflow: visible;
   }
 
   .matrix-table {
@@ -1541,6 +1544,7 @@
   }
 
   .matrix-container {
-    height: calc(100vh - 200px);
+    height: 100%;
+    overflow: visible;
   }
 }
