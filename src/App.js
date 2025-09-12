@@ -3,6 +3,8 @@ import React from 'react';
 import Analytics from './components/Analytics';
 import TrendAnalysis from './components/TrendAnalysis';
 import ExcelUploader from './components/ExcelUploader';
+import JSONUploader from './components/JSONUploader';
+import FeedbackDashboard from './components/FeedbackDashboard/FeedbackDashboard';
 import DataManagement from './components/DataManagement';
 import { calculateStatusCounts } from './utils/businessLogic';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -55,6 +57,7 @@ const Dashboard = () => {
     sidebarOpen
   } = state;
 
+
   const {
     switchDashboard,
     saveDashboardData,
@@ -70,10 +73,10 @@ const Dashboard = () => {
       icon: '📊',
       description: 'Resource Management System'
     },
-    'demand-forecast': {
-      name: 'Demand Forecast Dashboard',
+    'feedback': {
+      name: 'Feedback Dashboard',
       icon: '📈',
-      description: 'Resource Planning & Forecasting'
+      description: 'Feedback Collection & Analysis'
     },
     'performance-analytics': {
       name: 'Performance Analytics',
@@ -90,6 +93,9 @@ const Dashboard = () => {
   const handleDashboardSwitch = (dashboardKey) => {
     actions.setSidebarOpen(false);
     
+    // Clear any existing errors when switching dashboards
+    actions.setError(null);
+    
     // Set appropriate view based on dashboard and data availability
     if (dashboardKey === 'supply-quality') {
       // Check if we have data for this dashboard
@@ -100,6 +106,9 @@ const Dashboard = () => {
       } else {
         actions.setActiveView('upload');
       }
+    } else if (dashboardKey === 'feedback') {
+      // For Feedback Dashboard, show the dashboard directly
+      actions.setActiveView('dummy');
     } else {
       // For other dashboards, show dummy content
       actions.setActiveView('dummy');
@@ -160,7 +169,8 @@ const Dashboard = () => {
   };
 
   // Only use uploaded data, no default/sample data
-  const dataToUse = data && data.length > 0 ? data : [];
+  const currentDashboardData = state.dashboardData[currentDashboard] || data;
+  const dataToUse = currentDashboardData && currentDashboardData.length > 0 ? currentDashboardData : [];
   const statusCounts = dataToUse.length > 0 ? calculateStatusCounts(dataToUse) : {};
   
   
@@ -414,7 +424,11 @@ const Dashboard = () => {
           </div>
           <div className="header-actions">
             <DataManagement />
-            <ExcelUploader onDataLoaded={handleDataLoaded} onError={handleError} />
+            {currentDashboard === 'feedback' ? (
+              <JSONUploader onDataLoaded={handleDataLoaded} onError={handleError} />
+            ) : (
+              <ExcelUploader onDataLoaded={handleDataLoaded} onError={handleError} />
+            )}
           </div>
         </div>
       </header>
@@ -802,7 +816,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                   ) : (
-                    <Analytics data={data} />
+                    <Analytics data={dataToUse} />
                   )}
                 </div>
               </div>
@@ -845,19 +859,27 @@ const Dashboard = () => {
                       </p>
                     </div>
                   ) : (
-                <TrendAnalysis data={data} />
+                <TrendAnalysis data={dataToUse} />
                   )}
                 </div>
               </div>
             )}
           </>
           )
+        ) : currentDashboard === 'feedback' ? (
+          // Feedback Dashboard
+         
+          <FeedbackDashboard 
+            data={state.dashboardData['feedback'] || null}
+            onDataLoaded={handleDataLoaded}
+            onError={handleError}
+          />
         ) : (
           // Other dashboards - show dummy content
           <DummyDashboard 
-            title={dashboards[currentDashboard].name}
-            icon={dashboards[currentDashboard].icon}
-            description={dashboards[currentDashboard].description}
+            title={dashboards[currentDashboard]?.name}
+            icon={dashboards[currentDashboard]?.icon}
+            description={dashboards[currentDashboard]?.description}
           />
         )}
       </div>

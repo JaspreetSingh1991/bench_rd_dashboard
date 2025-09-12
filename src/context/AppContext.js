@@ -21,7 +21,7 @@ const initialState = {
   // Data cache for each dashboard
   dashboardData: {
     'supply-quality': null,
-    'demand-forecast': null,
+    'feedback': null,
     'performance-analytics': null,
     'capacity-planning': null
   },
@@ -29,7 +29,7 @@ const initialState = {
   // Loading states for each dashboard
   dashboardLoading: {
     'supply-quality': false,
-    'demand-forecast': false,
+    'feedback': false,
     'performance-analytics': false,
     'capacity-planning': false
   }
@@ -187,13 +187,20 @@ export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   // Persist data to localStorage when it changes
+  const prevDataRef = React.useRef();
   useEffect(() => {
     if (state.data && state.dataLoaded) {
-      localStorage.setItem('dashboardData', JSON.stringify({
+      const dataToSave = {
         data: state.data,
         dashboardData: state.dashboardData,
         currentDashboard: state.currentDashboard
-      }));
+      };
+      
+      // Only save if the data has actually changed
+      if (JSON.stringify(prevDataRef.current) !== JSON.stringify(dataToSave)) {
+        localStorage.setItem('dashboardData', JSON.stringify(dataToSave));
+        prevDataRef.current = dataToSave;
+      }
     }
   }, [state.data, state.dataLoaded, state.dashboardData, state.currentDashboard]);
 

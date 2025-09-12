@@ -1,11 +1,12 @@
-[{
+[
+        {
 "Id": 1,
         "Start time": "2025-05-30 18:15:06",
         "Completion time": "2025-05-30 18:23:52",
         "Email": "test@gmail.com",
         "Name": "John Antony",
         "Hiring Manager's Email ID": "supernova@gmail.com",
-        "Interviewer's Name": NaN,
+        "Interviewer's Name": "NaN",
         "Candidate GGID": "12345678",
         "Candidate Name": "John Antony",
         "Interview Date": "2025-06-04 00:00:00",
@@ -20,4 +21,6 @@
         "Specify Assessed Technical Skill -3": "ddddddddddd ddddddddddddd eddddddddddddd ddddddddddddd",
         "Rating according to Technical Skill - 3": 2.0,
         "Additional Remarks/Improvement areas": "Required improvement on Java"
-}]
+}
+]
+
