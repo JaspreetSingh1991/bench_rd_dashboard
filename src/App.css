@@ -429,92 +429,120 @@
 /* Navigation Styles */
 .nav-tabs {
   background-color: #f3f4f6;
-  border: 1px solid #6b7280;
+  border: none; /* Remove black border */
   border-radius: 8px;
   padding: 0;
-  margin: 0;
+  margin: 0 0 16px 0; /* Increased space below buttons row */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: sticky;
-  top: 40px;
-  z-index: 50;
+  top: 60px; /* Position below header (header height is ~60px) */
+  z-index: 999; /* Lower than header z-index */
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 0 auto 8px auto; /* Reduced gap below tabs */
+  width: calc(100% - 40px); /* Account for left/right padding */
+}
+
+/* Nav-tabs increased width when sidebar is open */
+.dashboard-content.sidebar-open .nav-tabs {
+  max-width: calc(100vw - 300px - 20px); /* Increased width when sidebar is open */
+  width: calc(100% - 20px); /* Reduced padding for wider width */
+  margin-right: 10px; /* Minimal right margin */
 }
 
 .tab-list {
   display: flex;
-  background-color: transparent;
+  background-color: #f8fafc;
   border-radius: 8px;
-  padding: 0;
-  gap: 0;
+  padding: 2px; /* Reduced padding for lower height */
+  gap: 3px; /* Reduced gap for more compact design */
   max-width: 1152px;
   margin: 0 auto;
 }
 
 .tab-button {
   flex: 1;
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 6px 12px; /* Reduced padding for lower height */
+  font-size: 12px; /* Slightly smaller font */
   font-weight: 600;
-  color: var(--text-secondary);
-  background-color: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
+  color: #6b7280;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease-in-out;
   text-align: center;
   position: relative;
-  min-height: 32px;
+  min-height: 28px; /* Reduced height from 36px to 28px */
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.tab-button:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+.tab-button:not(.active)::after {
+  content: '○';
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  font-size: 6px;
+  color: #d1d5db;
+  opacity: 0.6;
+}
+
+.tab-button:hover:not(.active) {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tab-button:hover:not(.active)::after {
+  color: #9ca3af;
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 .tab-button.active {
-  background-color: #f3f4f6;
-  color: #1a1a1a;
-  border-bottom-color: #6b7280;
-  font-weight: 600;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border-color: #3b82f6;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+  position: relative;
+}
+
+.tab-button.active::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   border-radius: 8px;
+  z-index: -1;
+  opacity: 0.3;
 }
 
 .tab-button.active::after {
-  content: '';
+  content: '●';
   position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid #6b7280;
+  top: 2px;
+  right: 6px;
+  font-size: 8px;
+  color: #ffffff;
+  animation: pulse 2s infinite;
 }
 
-.tab-button:first-child.active {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
-.tab-button:last-child.active {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-.tab-button:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
-.tab-button:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
+/* Remove old arrow styling and border radius overrides since we're using individual button styling */
 
 /* Button Styles */
 .btn {
@@ -588,6 +616,23 @@
   margin: 0 auto;
   padding: 0 var(--spacing-xl) var(--spacing-2xl);
   min-height: calc(100vh - 140px); /* Ensure full height minus header and nav */
+}
+
+/* Adjust dashboard content when sidebar is open */
+.dashboard-content.sidebar-open {
+  max-width: calc(100vw - 300px - 40px); /* Account for sidebar width and padding */
+  margin-left: 300px;
+  margin-right: 20px; /* Ensure right spacing */
+}
+
+/* Reduce gap between nav tabs and matrix */
+.dashboard-content .nav-tabs + * {
+  margin-top: 0;
+}
+
+/* Ensure nav-tabs has proper bottom spacing */
+.dashboard-content .nav-tabs {
+  margin-bottom: 20px !important;
 }
 
 /* Summary Cards */
@@ -691,29 +736,39 @@
   border: 1px solid var(--border-light);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: calc(100vh - 200px); /* Fixed height with proper calculation */
-  overflow-y: auto; /* Enable vertical scroll within matrix */
-  margin-top: var(--spacing-md);
-  max-width: 1200px;
+  height: 100%; /* Full height of parent container */
+  overflow: visible; /* No internal scrolling */
+  margin-top: 0; /* No top margin to reduce gap */
+  max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 40px); /* Account for left/right padding */
+}
+
+/* Matrix-container increased width when sidebar is open */
+.dashboard-content.sidebar-open .matrix-container {
+  max-width: calc(100vw - 300px - 20px); /* Increased width when sidebar is open */
+  width: calc(100% - 20px); /* Reduced padding for wider width */
+  margin-right: 10px; /* Minimal right margin */
 }
 
 .matrix-header {
   background-color: var(--gray-50);
-  padding: 16px 20px;
+  padding: 2px 12px; /* Further reduced from 4px to 2px */
   border-bottom: 1px solid var(--border-light);
 }
 
 .matrix-title {
-  font-size: 18px;
+  font-size: 12px; /* Reduced from 14px */
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 4px 0;
+  margin: 0 0 1px 0; /* Reduced margin */
 }
 
 .matrix-subtitle {
-  font-size: 14px;
+  font-size: 10px; /* Reduced from 11px */
   color: var(--text-tertiary);
   margin: 0;
 }
@@ -723,28 +778,68 @@
   border-collapse: collapse;
   font-size: 14px;
   background-color: var(--bg-primary);
-  height: auto; /* Auto height based on content */
+  flex: 1; /* Take up remaining space in flex container */
+  height: 100%; /* Full height of container */
+  table-layout: fixed; /* Enforce fixed column widths */
 }
 
 .matrix-table th {
-  background-color: var(--gray-100);
-  color: var(--text-primary);
+  background-color: #f8fafc; /* Clean light gray professional header */
+  color: #374151; /* Dark gray text for professional look */
   font-weight: 600;
   text-align: center;
-  padding: 12px 8px;
-  border-bottom: 1px solid var(--border-light);
+  padding: 2px 6px; /* Further reduced from 4px to 2px */
+  border-bottom: 2px solid #e5e7eb; /* Subtle gray border */
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 11px; /* Reduced font size */
+  line-height: 1.2; /* Tighter line height */
 }
 
 .matrix-table th:first-child {
   text-align: left;
-  padding-left: 16px;
+  padding: 2px 6px 2px 16px; /* Further reduced padding to match other headers */
+  background-color: #f8fafc; /* Same clean gray as other headers */
+  color: #374151; /* Dark gray text for consistency */
 }
 
 .matrix-table th:nth-child(2) {
   text-align: left;
-  padding-left: 16px;
+  padding: 2px 6px 2px 16px; /* Further reduced padding to match other headers */
+  background-color: #f8fafc; /* Same clean gray as other headers */
+  color: #374151; /* Dark gray text for consistency */
+}
+
+/* Set specific widths for all columns */
+.matrix-table th:first-child,
+.matrix-table td:first-child {
+  width: 120px; /* Bench/RD column */
+}
+
+.matrix-table th:nth-child(2),
+.matrix-table td:nth-child(2) {
+  width: 220px !important; /* Extra wide width for Status column to prevent text wrapping */
+  min-width: 220px !important; /* Ensure minimum width */
+  max-width: 220px !important; /* Ensure maximum width */
+  white-space: nowrap !important; /* Prevent text wrapping */
+  overflow: visible; /* Allow content to be visible */
+}
+
+/* Reduce width of grade columns (B1, B2, C1, C2, D1, D2) */
+.matrix-table th:nth-child(n+3),
+.matrix-table td:nth-child(n+3) {
+  width: 60px; /* Fixed narrow width for grade columns */
+  padding: 4px 2px; /* Reduced padding for grade columns */
+  text-align: center;
+  font-size: 11px; /* Slightly smaller font for grade columns */
+}
+
+/* Prevent overflow in last column (Grand Total) */
+.matrix-table th:last-child,
+.matrix-table td:last-child {
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .matrix-table td:first-child {
@@ -753,11 +848,17 @@
 
 
 .matrix-table td {
-  padding: 8px;
+  padding: 0px 6px; /* Further reduced top/bottom padding to 0px */
   border-bottom: 1px solid var(--border-light);
   text-align: center;
   vertical-align: middle;
-  font-size: 14px;
+  font-size: 11px; /* Reduced font size */
+  line-height: 1.2; /* Tighter line height */
+}
+
+/* Specific styling for count cells to reduce spacing further */
+.matrix-table td:not(:first-child):not(:nth-child(2)) {
+  padding: 0px 6px; /* Zero top/bottom padding for count cells */
 }
 
 .matrix-table tbody tr:hover {
@@ -770,18 +871,18 @@
 
 /* Bench/RD Grouping Cells - Light Grey for Bench */
 .matrix-table .bench-rd-cell {
-  background-color: #f3f4f6; /* Light grey background */
+  background-color: #dbeafe; /* Same as bench badge background */
   font-weight: 600;
   color: var(--text-primary);
-  text-align: left;
-  padding-left: 16px;
+  text-align: center;
+  padding: 12px 8px;
   position: relative;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 /* RD Grouping Cells - Light Orange/Beige */
 .matrix-table .rd-cell {
-  background-color: #fef3c7; /* Light orange/beige background */
+  background-color: #fef3c7; /* Same as RD badge background */
   font-weight: 600;
   color: var(--text-primary);
   text-align: left;
@@ -869,26 +970,76 @@
 }
 
 .matrix-table .total-row .bench-rd-cell {
-  background-color: #e5e7eb; /* Light grey for Bench total */
+  background-color: #dbeafe; /* Same as bench badge background */
   font-size: 10px;
 }
 
 .matrix-table .total-row .bench-rd-cell.rd-group {
-  background-color: #fef3c7; /* Light orange for RD total */
+  background-color: #fef3c7; /* Same as RD badge background */
   font-size: 10px;
+}
+
+/* Total row count cells - minimal spacing */
+.matrix-table .total-row td:not(:first-child):not(:nth-child(2)) {
+  padding: 0px 6px; /* Zero top/bottom padding for total row count cells */
+}
+
+/* Further reduce count cell spacing when sidebar is expanded */
+.dashboard-content.sidebar-open .matrix-table td:not(:first-child):not(:nth-child(2)) {
+  padding: 0px 3px; /* Even more reduced horizontal padding for count cells */
+}
+
+.dashboard-content.sidebar-open .matrix-table .total-row td:not(:first-child):not(:nth-child(2)) {
+  padding: 0px 3px; /* Even more reduced horizontal padding for total row count cells */
+}
+
+/* Further reduce grade column width when sidebar is expanded */
+.dashboard-content.sidebar-open .matrix-table {
+  table-layout: fixed; /* Ensure fixed layout when sidebar is open */
+}
+
+.dashboard-content.sidebar-open .matrix-table th:first-child,
+.dashboard-content.sidebar-open .matrix-table td:first-child {
+  width: 100px; /* Reduced width for Bench/RD column when sidebar is open */
+}
+
+.dashboard-content.sidebar-open .matrix-table th:nth-child(2),
+.dashboard-content.sidebar-open .matrix-table td:nth-child(2) {
+  width: 200px !important; /* Extra wide width for Status column when sidebar is open */
+  min-width: 200px !important; /* Ensure minimum width */
+  max-width: 200px !important; /* Ensure maximum width */
+  white-space: nowrap !important; /* Prevent text wrapping */
+  overflow: visible; /* Allow content to be visible */
+}
+
+.dashboard-content.sidebar-open .matrix-table th:nth-child(n+3),
+.dashboard-content.sidebar-open .matrix-table td:nth-child(n+3) {
+  width: 50px; /* Even narrower width when sidebar is open */
+  padding: 2px 1px; /* Ultra reduced padding for grade columns */
+  font-size: 10px; /* Smaller font when sidebar is open */
+}
+
+/* Prevent overflow in last column when sidebar is expanded */
+.dashboard-content.sidebar-open .matrix-table th:last-child,
+.dashboard-content.sidebar-open .matrix-table td:last-child {
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px; /* Smaller font for last column when sidebar is open */
 }
 
 /* Count Styles for Matrix - Clean Text Display */
 .matrix-badge {
   display: inline-block;
-  font-size: 16px;
+  font-size: 11px; /* Reduced font size */
   font-weight: 600;
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  padding: 2px 4px;
+  padding: 0px 3px; /* Further reduced padding */
   border-radius: 2px;
-  line-height: 1.2;
+  line-height: 1.1; /* Tighter line height */
 }
 
 .matrix-badge:hover {
@@ -904,6 +1055,37 @@
 .matrix-badge.zero:hover {
   background-color: transparent;
   transform: none;
+}
+
+/* Reduce matrix badge padding when sidebar is expanded */
+.dashboard-content.sidebar-open .matrix-badge {
+  padding: 0px 2px; /* Further reduced padding for badges when sidebar is open */
+}
+
+/* Bench/RD Badge Styles */
+.bench-rd-badge {
+  display: inline-block;
+  text-align: center;
+  border: 2px solid;
+  min-width: 60px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 80px;
+}
+
+.bench-rd-badge.bench {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #3b82f6;
+}
+
+.bench-rd-badge.rd {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
 }
 
 /* Professional Modal Styles */
@@ -1033,7 +1215,11 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border-right: 1px solid #e5e7eb;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 200px;
+  overflow-wrap: break-word;
 }
 
 .modal-table th:last-child {
@@ -1058,6 +1244,11 @@
   vertical-align: top;
   border-right: 1px solid #f3f4f6;
   color: #374151;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  max-width: 200px;
+  overflow-wrap: break-word;
 }
 
 .modal-table td:last-child {
@@ -1278,6 +1469,15 @@
   max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
+  width: calc(100% - 40px); /* Account for left/right padding */
+}
+
+/* Analytics/trends containers increased width when sidebar is open */
+.dashboard-content.sidebar-open .analytics-container,
+.dashboard-content.sidebar-open .trends-container {
+  max-width: calc(100vw - 300px - 20px); /* Increased width when sidebar is open */
+  width: calc(100% - 20px); /* Reduced padding for wider width */
+  margin-right: 10px; /* Minimal right margin */
 }
 
 .analytics-main-card,
@@ -1831,40 +2031,120 @@
   }
 
   .matrix-container {
-    height: calc(100vh - 200px);
-    overflow-y: auto;
+    height: 100%;
+    overflow: visible;
   }
 
   .matrix-table {
-    font-size: 10px;
+    font-size: 9px;
+    table-layout: fixed; /* Enforce fixed layout on mobile */
   }
 
   .matrix-table th,
   .matrix-table td {
-    padding: var(--spacing-sm);
+    padding: 0px 3px; /* Ultra reduced top/bottom padding for mobile */
+    font-size: 9px; /* Smaller font for mobile */
+    line-height: 1.1; /* Tighter line height for mobile */
+  }
+
+  /* Mobile count cells - even more compact */
+  .matrix-table td:not(:first-child):not(:nth-child(2)) {
+    padding: 0px 4px; /* Zero padding for mobile count cells */
+  }
+
+  /* Mobile sidebar expanded - ultra compact count cells */
+  .dashboard-content.sidebar-open .matrix-table td:not(:first-child):not(:nth-child(2)) {
+    padding: 0px 2px; /* Ultra reduced padding for mobile when sidebar is open */
+  }
+
+  .dashboard-content.sidebar-open .matrix-badge {
+    padding: 0px 1px; /* Ultra reduced badge padding for mobile when sidebar is open */
+  }
+
+  /* Mobile column width adjustments */
+  .matrix-table th:first-child,
+  .matrix-table td:first-child {
+    width: 100px; /* Bench/RD column on mobile */
+  }
+
+  /* Mobile sidebar expanded - reduced first column width */
+  .dashboard-content.sidebar-open .matrix-table th:first-child,
+  .dashboard-content.sidebar-open .matrix-table td:first-child {
+    width: 80px; /* Further reduced width for Bench/RD column on mobile when sidebar is open */
+  }
+
+  .matrix-table th:nth-child(2),
+  .matrix-table td:nth-child(2) {
+    width: 180px !important; /* Extra wide width for Status column on mobile */
+    min-width: 180px !important; /* Ensure minimum width */
+    max-width: 180px !important; /* Ensure maximum width */
+    white-space: nowrap !important; /* Prevent text wrapping on mobile */
+    overflow: visible; /* Allow content to be visible */
+  }
+
+  /* Mobile grade column width reduction */
+  .matrix-table th:nth-child(n+3),
+  .matrix-table td:nth-child(n+3) {
+    width: 45px; /* Narrower width for mobile */
+    min-width: 45px;
+    max-width: 45px;
+    padding: 1px 1px; /* Minimal padding for mobile */
+    font-size: 9px; /* Smaller font for mobile */
+  }
+
+  /* Mobile sidebar expanded - ultra narrow grade columns */
+  .dashboard-content.sidebar-open .matrix-table th:nth-child(n+3),
+  .dashboard-content.sidebar-open .matrix-table td:nth-child(n+3) {
+    width: 40px; /* Ultra narrow width for mobile when sidebar is open */
+    min-width: 40px;
+    max-width: 40px;
+    padding: 0px 1px; /* Minimal padding for mobile when sidebar is open */
+    font-size: 8px; /* Very small font for mobile when sidebar is open */
+  }
+
+  /* Mobile last column overflow prevention */
+  .matrix-table th:last-child,
+  .matrix-table td:last-child {
+    max-width: 45px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 8px; /* Smaller font for mobile */
+  }
+
+  /* Mobile sidebar expanded last column */
+  .dashboard-content.sidebar-open .matrix-table th:last-child,
+  .dashboard-content.sidebar-open .matrix-table td:last-child {
+    max-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 7px; /* Very small font for mobile when sidebar is open */
   }
 
   .matrix-badge {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
-    padding: 1px 4px;
+    padding: 0px 3px; /* Reduced from 1px to 0px for top/bottom */
     line-height: 1.2;
   }
 
   .nav-tabs {
-    position: static;
+    position: sticky;
+    top: 60px; /* Keep below header on mobile too */
+    z-index: 999;
   }
 
   .tab-button {
-    padding: 4px 8px;
-    font-size: 11px;
+    padding: 4px 8px; /* Further reduced for mobile */
+    font-size: 10px; /* Smaller font for mobile */
     font-weight: 600;
-    min-height: 28px;
+    min-height: 24px; /* Reduced height for mobile */
   }
 
   .matrix-container {
-    height: calc(100vh - 200px);
-    overflow-y: auto;
+    height: 100%;
+    overflow: visible;
   }
 
   /* Mobile Sidebar Styles */

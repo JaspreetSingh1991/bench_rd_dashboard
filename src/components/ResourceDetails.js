@@ -78,12 +78,48 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Bench/RD</TableCell>
-                <TableCell>Grade</TableCell>
-                <TableCell>Match 1</TableCell>
-                <TableCell>Match 2</TableCell>
-                <TableCell>Location Constraint</TableCell>
-                <TableCell>Aging (days)</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Bench/RD</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Grade</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Match 1</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Match 2</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Location Constraint</TableCell>
+                <TableCell sx={{ 
+                  wordWrap: 'break-word', 
+                  wordBreak: 'break-word', 
+                  whiteSpace: 'normal',
+                  maxWidth: '200px',
+                  overflowWrap: 'break-word'
+                }}>Aging (days)</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -94,30 +130,66 @@ const ResourceDetails = ({ open, onClose, data, title, filters }) => {
                 return 0;
               }).map((record, index) => (
                 <TableRow key={index} hover>
-                  <TableCell>{record['Bench/RD']}</TableCell>
-                  <TableCell>{record['Grade']}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>{record['Bench/RD']}</TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>{record['Grade']}</TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>
                     {record['Match 1']?.toLowerCase().includes('ml case') ? (
                       <Chip label="ML Case" size="small" color="warning" />
                     ) : (
                       record['Match 1'] || '-'
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>
                     {record['Match 2']?.toLowerCase().includes('ml case') ? (
                       <Chip label="ML Case" size="small" color="warning" />
                     ) : (
                       record['Match 2'] || '-'
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>
                     {record['Location Constraint']?.toLowerCase() === 'yes' ? (
                       <Chip label="Yes" size="small" color="info" />
                     ) : (
                       record['Location Constraint'] || 'No'
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ 
+                    wordWrap: 'break-word', 
+                    wordBreak: 'break-word', 
+                    whiteSpace: 'normal',
+                    maxWidth: '200px',
+                    overflowWrap: 'break-word'
+                  }}>
                     <Chip
                       label={`${record['Aging'] || 0} days`}
                       size="small"
