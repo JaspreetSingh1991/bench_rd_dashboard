@@ -1,9 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Fullscreen, FullscreenExit } from '@mui/icons-material';
 import './DataCards.css';
 
 const DataCards = ({ data, onCardClick }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
+  const [isTableMaximized, setIsTableMaximized] = useState(false);
+  const recordsPerPage = isTableMaximized ? 10 : 5;
+
+  // Reset to first page when table is maximized/minimized
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [isTableMaximized]);
 
   if (!data) return null;
 
@@ -26,6 +33,10 @@ const DataCards = ({ data, onCardClick }) => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  const toggleTableMaximize = () => {
+    setIsTableMaximized(!isTableMaximized);
   };
 
   // Calculate insights and analytics
@@ -60,18 +71,42 @@ const DataCards = ({ data, onCardClick }) => {
 
   return (
     <div className="data-cards">
-      {/* Insights Dashboard */}
+      {/* All 5 Cards in First Row */}
       <div className="data-cards__insights">
-        <div className="data-cards__insights-grid">
-          <div className="data-cards__insight-card data-cards__insight-card--primary">
-            <div className="data-cards__insight-icon">📊</div>
+        <div className="data-cards__insights-grid data-cards__insights-grid--five-cards">
+          {/* Screen Rejects Card */}
+          <div
+            className="data-cards__insight-card data-cards__insight-card--screen"
+            onClick={() => onCardClick('screenReject', data.screenReject)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="data-cards__insight-icon">🚫</div>
             <div className="data-cards__insight-content">
-              <h3>{totalOpportunities}</h3>
-              <p>Total Opportunities</p>
-              <span className="data-cards__insight-subtitle">Across {totalCandidates} candidates</span>
+              <h3>{screenRejectCount}</h3>
+              <p>Screen Rejects</p>
+              <span className="data-cards__insight-subtitle">
+                {totalRejections > 0 ? ((screenRejectCount / totalRejections) * 100).toFixed(1) : 0}% of total
+              </span>
             </div>
           </div>
-          
+
+          {/* Technical Rejects Card */}
+          <div
+            className="data-cards__insight-card data-cards__insight-card--tech"
+            onClick={() => onCardClick('techReject', data.techReject)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="data-cards__insight-icon">⚙️</div>
+            <div className="data-cards__insight-content">
+              <h3>{techRejectCount}</h3>
+              <p>Technical Rejects</p>
+              <span className="data-cards__insight-subtitle">
+                {totalRejections > 0 ? ((techRejectCount / totalRejections) * 100).toFixed(1) : 0}% of total
+              </span>
+            </div>
+          </div>
+
+          {/* Avg Opportunities Card */}
           <div className="data-cards__insight-card data-cards__insight-card--success">
             <div className="data-cards__insight-icon">📈</div>
             <div className="data-cards__insight-content">
@@ -81,6 +116,7 @@ const DataCards = ({ data, onCardClick }) => {
             </div>
           </div>
           
+          {/* Rejection Rate Card */}
           <div className="data-cards__insight-card data-cards__insight-card--warning">
             <div className="data-cards__insight-icon">⚠️</div>
             <div className="data-cards__insight-content">
@@ -89,7 +125,8 @@ const DataCards = ({ data, onCardClick }) => {
               <span className="data-cards__insight-subtitle">{totalRejections} total rejections</span>
             </div>
           </div>
-          
+
+          {/* Top Interviewed Role Card */}
           <div className="data-cards__insight-card data-cards__insight-card--info">
             <div className="data-cards__insight-icon">🎯</div>
             <div className="data-cards__insight-content">
@@ -103,76 +140,20 @@ const DataCards = ({ data, onCardClick }) => {
         </div>
       </div>
 
-              {/* Rejection Metrics - Innovative Design */}
-              <div className="data-cards__rejection-metrics">
-                <div className="data-cards__rejection-grid">
-                  <div
-                    className="data-cards__rejection-card data-cards__rejection-card--screen"
-                    onClick={() => onCardClick('screenReject', data.screenReject)}
+
+              <div className={`data-cards__table-card ${isTableMaximized ? 'data-cards__table-card--maximized' : ''}`}>
+                <div className="data-cards__table-header">
+                  <h3>Opportunities Data</h3>
+                  <button 
+                    className="data-cards__maximize-btn"
+                    onClick={toggleTableMaximize}
+                    title={isTableMaximized ? 'Minimize' : 'Maximize'}
                   >
-                    <div className="data-cards__rejection-icon">
-                      <div className="data-cards__rejection-icon-bg">🚫</div>
-                    </div>
-                    <div className="data-cards__rejection-content">
-                      <div className="data-cards__rejection-count">{screenRejectCount}</div>
-                      <div className="data-cards__rejection-label">Screen Rejects</div>
-                    </div>
-                    <div className="data-cards__rejection-footer">
-                      <div className="data-cards__rejection-percentage">
-                        {totalRejections > 0 ? ((screenRejectCount / totalRejections) * 100).toFixed(1) : 0}%
-                      </div>
-                      <div className="data-cards__rejection-arrow">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="data-cards__rejection-divider">
-                    <div className="data-cards__rejection-divider-line"></div>
-                    <div className="data-cards__rejection-divider-text">vs</div>
-                    <div className="data-cards__rejection-divider-line"></div>
-                  </div>
-
-                  <div
-                    className="data-cards__rejection-card data-cards__rejection-card--tech"
-                    onClick={() => onCardClick('techReject', data.techReject)}
-                  >
-                    <div className="data-cards__rejection-icon">
-                      <div className="data-cards__rejection-icon-bg">⚙️</div>
-                    </div>
-                    <div className="data-cards__rejection-content">
-                      <div className="data-cards__rejection-count">{techRejectCount}</div>
-                      <div className="data-cards__rejection-label">Technical Rejects</div>
-                    </div>
-                    <div className="data-cards__rejection-footer">
-                      <div className="data-cards__rejection-percentage">
-                        {totalRejections > 0 ? ((techRejectCount / totalRejections) * 100).toFixed(1) : 0}%
-                      </div>
-                      <div className="data-cards__rejection-arrow">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+                    {isTableMaximized ? <FullscreenExit fontSize="small" /> : <Fullscreen fontSize="small" />}
+                  </button>
                 </div>
-
-                <div className="data-cards__rejection-summary">
-                  <div className="data-cards__rejection-summary-item">
-                    <span className="data-cards__rejection-summary-label">Total Rejections</span>
-                    <span className="data-cards__rejection-summary-value">{totalRejections}</span>
-                  </div>
-                  <div className="data-cards__rejection-summary-item">
-                    <span className="data-cards__rejection-summary-label">Rejection Rate</span>
-                    <span className="data-cards__rejection-summary-value">{rejectionRate}%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="data-cards__table-card">
-          <table className="data-cards__table">
+                <div className="data-cards__table-container">
+                  <table className="data-cards__table">
             <thead>
               <tr>
                 <th>Candidate GGID</th>
@@ -206,10 +187,11 @@ const DataCards = ({ data, onCardClick }) => {
                 </tr>
               )}
             </tbody>
-          </table>
-          
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
+                  </table>
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
             <div className="data-cards__pagination">
               <div className="data-cards__pagination-info">
                 Showing {startIndex + 1} to {Math.min(endIndex, groupOutputData.length)} of {groupOutputData.length} entries
@@ -244,15 +226,11 @@ const DataCards = ({ data, onCardClick }) => {
                 </button>
               </div>
             </div>
-          )}
-        </div>
+                )}
+              </div>
         
         {/* Detailed Analytics Section */}
         <div className="data-cards__analytics">
-          <div className="data-cards__analytics-header">
-            <h3>Detailed Analytics</h3>
-            <p>In-depth analysis of feedback patterns and trends</p>
-          </div>
           
           <div className="data-cards__analytics-grid">
             <div className="data-cards__analytics-card">
