@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/bench_rd_dashboard/demand-dashboard/static/css/main.e21f32d5.css",
+    "main.js": "/bench_rd_dashboard/demand-dashboard/static/js/main.53d17de3.js",
+    "static/js/453.992bad4a.chunk.js": "/bench_rd_dashboard/demand-dashboard/static/js/453.992bad4a.chunk.js",
+    "index.html": "/bench_rd_dashboard/demand-dashboard/index.html",
+    "main.e21f32d5.css.map": "/bench_rd_dashboard/demand-dashboard/static/css/main.e21f32d5.css.map",
+    "main.53d17de3.js.map": "/bench_rd_dashboard/demand-dashboard/static/js/main.53d17de3.js.map",
+    "453.992bad4a.chunk.js.map": "/bench_rd_dashboard/demand-dashboard/static/js/453.992bad4a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e21f32d5.css",
+    "static/js/main.53d17de3.js"
+  ]
+}
