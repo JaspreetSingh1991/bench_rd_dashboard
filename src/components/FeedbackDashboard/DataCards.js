@@ -19,18 +19,19 @@ const DataCards = ({ data, onCardClick }) => {
   const groupOutputCount = data.groupOutput ? (Array.isArray(data.groupOutput) ? data.groupOutput.reduce((total, item) => total + (item['Row Count'] || 0), 0) : 0) : 0;
 
   const handleOpportunityClick = (item) => {
-    // Create a simple record with candidate name for display
-    const candidateName = Array.isArray(item['Candidate Name']) 
-      ? item['Candidate Name'].join(', ') 
-      : item['Candidate Name'] || 'Unknown';
-    
-    const candidateRecord = {
-      'Candidate Name': candidateName,
-      'Candidate GGID': item['Candidate GGID'] || '-',
-      'No of Opportunities': item['Row Count'] || 0
-    };
-    
-    onCardClick('groupOutput', [candidateRecord]);
+    if (item.uncommnonrecord && Array.isArray(item.uncommnonrecord)) {
+      // Map the uncommnonrecord data to include Candidate Name from the first index
+      const candidateName = Array.isArray(item['Candidate Name']) && item['Candidate Name'].length > 0 
+        ? item['Candidate Name'][0] 
+        : (item['Candidate Name'] || 'Unknown');
+      
+      const mappedData = item.uncommnonrecord.map(record => ({
+        ...record,
+        'Name': candidateName, // Override the "Name" field with actual candidate name
+        'Candidate Name': candidateName // Also add as "Candidate Name" field
+      }));
+      onCardClick('groupOutput', mappedData);
+    }
   };
 
   // Pagination logic for groupOutput table
