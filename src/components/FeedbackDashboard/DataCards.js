@@ -19,17 +19,34 @@ const DataCards = ({ data, onCardClick }) => {
   const groupOutputCount = data.groupOutput ? (Array.isArray(data.groupOutput) ? data.groupOutput.reduce((total, item) => total + (item['Row Count'] || 0), 0) : 0) : 0;
 
   const handleOpportunityClick = (item) => {
-    if (item.uncommnonrecord && Array.isArray(item.uncommnonrecord)) {
-      onCardClick('groupOutput', item.uncommnonrecord);
-    }
+    // Create a simple record with candidate name for display
+    const candidateName = Array.isArray(item['Candidate Name']) 
+      ? item['Candidate Name'].join(', ') 
+      : item['Candidate Name'] || 'Unknown';
+    
+    const candidateRecord = {
+      'Candidate Name': candidateName,
+      'Candidate GGID': item['Candidate GGID'] || '-',
+      'No of Opportunities': item['Row Count'] || 0
+    };
+    
+    onCardClick('groupOutput', [candidateRecord]);
   };
 
   // Pagination logic for groupOutput table
   const groupOutputData = data.groupOutput && Array.isArray(data.groupOutput) ? data.groupOutput : [];
-  const totalPages = Math.ceil(groupOutputData.length / recordsPerPage);
+  
+  // Sort by "No of Opportunities" (Row Count) from highest to lowest
+  const sortedGroupOutputData = [...groupOutputData].sort((a, b) => {
+    const aCount = a['Row Count'] || 0;
+    const bCount = b['Row Count'] || 0;
+    return bCount - aCount; // Descending order (highest to lowest)
+  });
+  
+  const totalPages = Math.ceil(sortedGroupOutputData.length / recordsPerPage);
   const startIndex = (currentPage - 1) * recordsPerPage;
   const endIndex = startIndex + recordsPerPage;
-  const paginatedData = groupOutputData.slice(startIndex, endIndex);
+  const paginatedData = sortedGroupOutputData.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -40,8 +57,8 @@ const DataCards = ({ data, onCardClick }) => {
   };
 
   // Calculate insights and analytics
-  const totalOpportunities = groupOutputData.reduce((total, item) => total + (item['Row Count'] || 0), 0);
-  const totalCandidates = groupOutputData.length;
+  const totalOpportunities = sortedGroupOutputData.reduce((total, item) => total + (item['Row Count'] || 0), 0);
+  const totalCandidates = sortedGroupOutputData.length;
   const avgOpportunitiesPerCandidate = totalCandidates > 0 ? (totalOpportunities / totalCandidates).toFixed(1) : 0;
   
   // Calculate rejection insights
@@ -52,7 +69,7 @@ const DataCards = ({ data, onCardClick }) => {
   
   // Top roles analysis - get roles from uncommnonrecord arrays in groupOutput
   const roleAnalysis = {};
-  groupOutputData.forEach(item => {
+  sortedGroupOutputData.forEach(item => {
     if (item.uncommnonrecord && Array.isArray(item.uncommnonrecord)) {
       item.uncommnonrecord.forEach(record => {
         // Handle both variations of the field name (with and without \u00a0)
@@ -174,7 +191,7 @@ const DataCards = ({ data, onCardClick }) => {
                   <td 
                     className="data-cards__opportunity-count"
                     onClick={() => handleOpportunityClick(item)}
-                    style={{ cursor: item.uncommnonrecord && Array.isArray(item.uncommnonrecord) ? 'pointer' : 'default' }}
+                    style={{ cursor: 'pointer' }}
                   >
                     {item['Row Count'] || 0}
                   </td>
@@ -194,7 +211,7 @@ const DataCards = ({ data, onCardClick }) => {
                 {totalPages > 1 && (
             <div className="data-cards__pagination">
               <div className="data-cards__pagination-info">
-                Showing {startIndex + 1} to {Math.min(endIndex, groupOutputData.length)} of {groupOutputData.length} entries
+                Showing {startIndex + 1} to {Math.min(endIndex, sortedGroupOutputData.length)} of {sortedGroupOutputData.length} entries
               </div>
               <div className="data-cards__pagination-controls">
                 <button 
