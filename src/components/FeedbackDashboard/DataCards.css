@@ -855,6 +855,10 @@
 .data-cards__pagination-numbers {
   display: flex;
   gap: 2px;
+  align-items: center;
+  flex-wrap: nowrap;
+  max-width: 200px;
+  overflow: hidden;
 }
 
 .data-cards__pagination-number {
@@ -887,6 +891,14 @@
 .data-cards__pagination-number.active:hover {
   background: #1d4ed8;
   border-color: #1d4ed8;
+}
+
+.data-cards__pagination-ellipsis {
+  padding: 0 4px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 500;
+  user-select: none;
 }
 
 .data-cards__card-icon {
