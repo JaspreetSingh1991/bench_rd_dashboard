@@ -20,16 +20,34 @@ const DataCards = ({ data, onCardClick }) => {
 
   const handleOpportunityClick = (item) => {
     if (item.uncommnonrecord && Array.isArray(item.uncommnonrecord)) {
-      onCardClick('groupOutput', item.uncommnonrecord);
+      // Map the uncommnonrecord data to include Candidate Name from the first index
+      const candidateName = Array.isArray(item['Candidate Name']) && item['Candidate Name'].length > 0 
+        ? item['Candidate Name'][0] 
+        : (item['Candidate Name'] || 'Unknown');
+      
+      const mappedData = item.uncommnonrecord.map(record => ({
+        ...record,
+        'Name': candidateName, // Override the "Name" field with actual candidate name
+        'Candidate Name': candidateName // Also add as "Candidate Name" field
+      }));
+      onCardClick('groupOutput', mappedData);
     }
   };
 
   // Pagination logic for groupOutput table
   const groupOutputData = data.groupOutput && Array.isArray(data.groupOutput) ? data.groupOutput : [];
-  const totalPages = Math.ceil(groupOutputData.length / recordsPerPage);
+  
+  // Sort by "No of Opportunities" (Row Count) from highest to lowest
+  const sortedGroupOutputData = [...groupOutputData].sort((a, b) => {
+    const aCount = a['Row Count'] || 0;
+    const bCount = b['Row Count'] || 0;
+    return bCount - aCount; // Descending order (highest to lowest)
+  });
+  
+  const totalPages = Math.ceil(sortedGroupOutputData.length / recordsPerPage);
   const startIndex = (currentPage - 1) * recordsPerPage;
   const endIndex = startIndex + recordsPerPage;
-  const paginatedData = groupOutputData.slice(startIndex, endIndex);
+  const paginatedData = sortedGroupOutputData.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -40,8 +58,8 @@ const DataCards = ({ data, onCardClick }) => {
   };
 
   // Calculate insights and analytics
-  const totalOpportunities = groupOutputData.reduce((total, item) => total + (item['Row Count'] || 0), 0);
-  const totalCandidates = groupOutputData.length;
+  const totalOpportunities = sortedGroupOutputData.reduce((total, item) => total + (item['Row Count'] || 0), 0);
+  const totalCandidates = sortedGroupOutputData.length;
   const avgOpportunitiesPerCandidate = totalCandidates > 0 ? (totalOpportunities / totalCandidates).toFixed(1) : 0;
   
   // Calculate rejection insights
@@ -52,7 +70,7 @@ const DataCards = ({ data, onCardClick }) => {
   
   // Top roles analysis - get roles from uncommnonrecord arrays in groupOutput
   const roleAnalysis = {};
-  groupOutputData.forEach(item => {
+  sortedGroupOutputData.forEach(item => {
     if (item.uncommnonrecord && Array.isArray(item.uncommnonrecord)) {
       item.uncommnonrecord.forEach(record => {
         // Handle both variations of the field name (with and without \u00a0)
@@ -174,7 +192,7 @@ const DataCards = ({ data, onCardClick }) => {
                   <td 
                     className="data-cards__opportunity-count"
                     onClick={() => handleOpportunityClick(item)}
-                    style={{ cursor: item.uncommnonrecord && Array.isArray(item.uncommnonrecord) ? 'pointer' : 'default' }}
+                    style={{ cursor: 'pointer' }}
                   >
                     {item['Row Count'] || 0}
                   </td>
@@ -194,7 +212,7 @@ const DataCards = ({ data, onCardClick }) => {
                 {totalPages > 1 && (
             <div className="data-cards__pagination">
               <div className="data-cards__pagination-info">
-                Showing {startIndex + 1} to {Math.min(endIndex, groupOutputData.length)} of {groupOutputData.length} entries
+                Showing {startIndex + 1} to {Math.min(endIndex, sortedGroupOutputData.length)} of {sortedGroupOutputData.length} entries
               </div>
               <div className="data-cards__pagination-controls">
                 <button 
@@ -206,15 +224,74 @@ const DataCards = ({ data, onCardClick }) => {
                 </button>
                 
                 <div className="data-cards__pagination-numbers">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      className={`data-cards__pagination-number ${currentPage === page ? 'active' : ''}`}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {(() => {
+                    const maxVisiblePages = 5;
+                    const halfVisible = Math.floor(maxVisiblePages / 2);
+                    let startPage = Math.max(1, currentPage - halfVisible);
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                    
+                    // Adjust startPage if we're near the end
+                    if (endPage - startPage < maxVisiblePages - 1) {
+                      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                    }
+                    
+                    const pages = [];
+                    
+                    // Add first page and ellipsis if needed
+                    if (startPage > 1) {
+                      pages.push(
+                        <button
+                          key={1}
+                          className="data-cards__pagination-number"
+                          onClick={() => handlePageChange(1)}
+                        >
+                          1
+                        </button>
+                      );
+                      if (startPage > 2) {
+                        pages.push(
+                          <span key="ellipsis1" className="data-cards__pagination-ellipsis">
+                            ...
+                          </span>
+                        );
+                      }
+                    }
+                    
+                    // Add visible page numbers
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <button
+                          key={i}
+                          className={`data-cards__pagination-number ${currentPage === i ? 'active' : ''}`}
+                          onClick={() => handlePageChange(i)}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+                    
+                    // Add last page and ellipsis if needed
+                    if (endPage < totalPages) {
+                      if (endPage < totalPages - 1) {
+                        pages.push(
+                          <span key="ellipsis2" className="data-cards__pagination-ellipsis">
+                            ...
+                          </span>
+                        );
+                      }
+                      pages.push(
+                        <button
+                          key={totalPages}
+                          className="data-cards__pagination-number"
+                          onClick={() => handlePageChange(totalPages)}
+                        >
+                          {totalPages}
+                        </button>
+                      );
+                    }
+                    
+                    return pages;
+                  })()}
                 </div>
                 
                 <button 
