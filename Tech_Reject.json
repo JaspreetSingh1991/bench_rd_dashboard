@@ -1,0 +1,26 @@
+[
+    {
+        "Id": 2,
+        "Start time": "2025-05-31 11:34:36",
+        "Completion time": "2025-05-31 11:38:34",
+        "Email": "smit-a@gmail.com",
+        "Name": "Smit Lowe",
+        "Hiring Manager's Email ID": "mridula@gmail.com",
+        "Interviewer's Name": "NaN",
+        "Candidate GGID": "12323442",
+        "Candidate Name": "Smit Lowe",
+        "Interview Date": "2025-05-30 00:00:00",
+        "Role for which interviewed\u00a0": "Developer",
+        "Account Name": "Sunsilk",
+        "Final Outcome": "Client Tech Reject",
+        "Communication Skills": 3.0,
+        "Specify Assessed Technical Skill -1": ".Net Full Stack Deveoper",
+        "Rating according to Technical Skill - 1": 3.0,
+        "Specify Assessed Technical Skill - 2": "NaN",
+        "Rating according to Technical Skill - 2": "NaN",
+        "Specify Assessed Technical Skill -3": "NaN",
+        "Rating according to Technical Skill - 3": "NaN",
+        "Additional Remarks/Improvement areas": "Client Feedback behind tech reject: C#, DotNet, Azure Not upto the mark"
+    }
+]
+
