@@ -409,7 +409,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div>
+    <div className="App">
       {/* Header */}
       {currentDashboard !== 'demand-planning' && (
       <header className={`dashboard-header ${sidebarOpen ? 'sidebar-open' : ''}`}>

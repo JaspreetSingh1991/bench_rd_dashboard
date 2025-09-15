@@ -1,5 +1,23 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Container, Row, Col, Card, Button, Navbar, Nav, Table } from "react-bootstrap";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  Link,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Paper,Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+
 export default function DemandDashboard() {
   const fileInputRef = useRef(null);
   const [uploadedData, setUploadedData] = useState(null);
@@ -66,257 +84,352 @@ export default function DemandDashboard() {
   };
   return (
     <>
-    <Navbar bg="dark" data-bs-theme="dark">
-        <Container>
-          <Navbar.Brand href="#home">Demand Dashboard</Navbar.Brand>
-          <Nav className="me-auto">
-            <Nav.Link href="#home">Home</Nav.Link>
-            <Nav.Link href="#features">Features</Nav.Link>
-            <Nav.Link href="#pricing">Help</Nav.Link>
-          </Nav>
-          {/* Right Side Button */}
-          <div className="ms-auto">
-            <Button variant="primary" onClick={handleUploadClick}>
-              📤 Upload
-            </Button>
-             <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="d-none"
-              accept=".json"
-            />
-          </div>
-        </Container>
-      </Navbar>
-    <Container fluid style={{ paddingLeft: '70px' }} className="my-4">
-       
-      <Row className="g-3">
+    <AppBar position="static" color="primary" style={{ paddingLeft: '70px' }}>
+      <Toolbar>
+        {/* Left Side - Brand */}
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          Demand Dashboard
+        </Typography>
+        
+        {/* Right Side - Upload Button */}
+        <Box>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleUploadClick}
+          >
+            📤 Upload
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: "none" }} // replaces Bootstrap's d-none
+            accept=".json"
+          />
+        </Box>
+      </Toolbar>
+    </AppBar>
+    
+    <Container maxWidth="xxl" sx={{ pl: "70px", my: 4 }} style={{ paddingLeft: '70px' }}>
+      <Grid container spacing={3}>
         {/* Card 1 */}
-        <Col xs={12} md={6} lg={3}>
-          <Card className="h-60 shadow-sm" bg="primary" text="white">
-            <Card.Body >
-              <Card.Title>Mission + Customer Interview No</Card.Title>
-              <Card.Text>
-                {techRejectLen}
-              </Card.Text>
-            </Card.Body>
+        <Grid item size={3}>
+          <Card
+            sx={{
+              bgcolor: "primary.main",
+              color: "white",
+              boxShadow: 2,
+              height: 100
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6">
+                Mission + Customer Interview No
+              </Typography>
+              <Typography variant="h4">{techRejectLen}</Typography>
+            </CardContent>
           </Card>
-        </Col>
+        </Grid>
 
         {/* Card 2 */}
-        <Col xs={12} md={6} lg={3}>
-          <Card className="h-60 shadow-sm" bg="secondary" text="white">
-            <Card.Body>
-              <Card.Title>PRESALES + Customer Interview No</Card.Title>
-              <Card.Text>
-                {screenRejectLen}
-              </Card.Text>
-            </Card.Body>
+        <Grid item size={3}>
+          <Card
+            sx={{
+              bgcolor: "secondary.main",
+              color: "white",
+              boxShadow: 2,
+              height: 100
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6">
+                PRESALES + Customer Interview No
+              </Typography>
+              <Typography variant="h4">{screenRejectLen}</Typography>
+            </CardContent>
           </Card>
-        </Col>
+        </Grid>
 
         {/* Card 3 */}
-        <Col xs={12} md={6} lg={3}>
-          <Card className="h-60 shadow-sm" bg="danger" text="white">
-            <Card.Body>
-              <Card.Title>Demand &gt; 90</Card.Title>
-              <Card.Text>
-                {ageDemandLen}
-              </Card.Text>
-            </Card.Body>
+        <Grid item size={3}>
+          <Card
+            sx={{
+              bgcolor: "error.main",
+              color: "white",
+              boxShadow: 2,
+              height: 100
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6">Demand &gt; 90</Typography>
+              <Typography variant="h4">{ageDemandLen}</Typography>
+            </CardContent>
           </Card>
-        </Col>
+        </Grid>
 
         {/* Card 4 */}
-        <Col xs={12} md={6} lg={3}>
-          <Card className="h-60 shadow-sm" bg="warning" text="white">
-            <Card.Body>
-              <Card.Title>Test Count 2</Card.Title>
-              <Card.Text>
-                99
-              </Card.Text>
-            </Card.Body>
+        <Grid item size={3}>
+          <Card
+            sx={{
+              bgcolor: "warning.main",
+              color: "white",
+              boxShadow: 2,
+              height: 100
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6">Test Count 2</Typography>
+              <Typography variant="h4">99</Typography>
+            </CardContent>
           </Card>
-        </Col>
-      </Row>
-       
+        </Grid>
+      </Grid>
     </Container>
-    <Container fluid style={{ paddingLeft: '70px' }} className="my-4">
-      <Row className="g-3">
-        {/* Table 1 */}
-        <Col xs={12} lg={6}>
-          <Card className="h-60 shadow-sm">
-            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-            <Table striped bordered hover size="sm">
-              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                <tr>
-                   <th colSpan={4} className="text-center">
-                    Mission + Customer Interview No
-                  </th>
-                </tr>
-              </thead>
-              <thead className="table-primary">
-                <tr>
-                  <th>#</th>
-                  <th style={{ width: "150px" }}>Task Name</th>
-                  <th>Task Code</th>
-                  <th>Task Ageing</th>
-                </tr>
-              </thead>
-              <tbody>
-                {techReject.length > 0 ? (
-                  techReject.map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item["Task Name"]}</td>
-                      <td>{item["Task Code"]}</td>
-                      <td>{item["Task Type"]}</td>                    
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted">
-                      No records found 
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-            </div>
-          </Card>
-        </Col>
+    <Container maxWidth="xxl" sx={{ pl: "70px", my: 4 }} style={{ paddingLeft: '70px' }}>
+      <Grid container spacing={3}>
+      {/* Left Table */}
+      <Grid item size={6}>
+        <Card sx={{ boxShadow: 3 }}>
+          <CardContent sx={{ p: 0 }}>
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 300, overflowY: "auto" }}
+            >
+              {/* Title Header */}
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      align="center"
+                      sx={{
+                        backgroundColor: "grey.900",
+                        color: "white",
+                        fontWeight: "bold",
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 2,
+                      }}
+                    >
+                      Mission + Customer Interview No
+                    </TableCell>
+                  </TableRow>
+                  <TableRow sx={{ backgroundColor: "primary.light" }}>
+                    <TableCell>#</TableCell>
+                    <TableCell sx={{ width: 150 }}>Task Name</TableCell>
+                    <TableCell>Task Code</TableCell>
+                    <TableCell>Task Ageing</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {techReject.length > 0 ? (
+                    techReject.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item["Task Name"]}</TableCell>
+                        <TableCell>{item["Task Code"]}</TableCell>
+                        <TableCell>{item["Task Type"]}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">
+                          No records found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Grid>
 
-        {/* Table 2 */}
-        <Col xs={12} lg={6}>
-          <Card className="h-60 shadow-sm">
-            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-            <Table striped bordered hover size="sm">
-              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                <tr>
-                   <th colSpan={4} className="text-center">
-                    PRESALES + Customer Interview No
-                  </th>
-                </tr>
-              </thead>
-              <thead className="table-warning">
-                <tr>
-                  <th>#</th>
-                  <th style={{ width: "150px" }}>Task Name</th>
-                  <th>Task Code</th>
-                  <th>Task Ageing</th>
-                </tr>
-              </thead>
-              <tbody>
-                {techReject.length > 0 ? (
-                  techReject.map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item["Task Name"]}</td>
-                      <td>{item["Task Code"]}</td>
-                      <td>{item["Task Type"]}</td>                    
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted">
-                      No records found 
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-            </div>
-          </Card>
-        </Col>        
-      </Row> <br/>
-      <Row className="g-3">
-        {/* Table 1 */}
-        <Col xs={12} lg={6}>
-          <Card className="h-60 shadow-sm">
-            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-            <Table striped bordered hover size="sm">
-              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                <tr>
-                   <th colSpan={4} className="text-center">
-                    Demand &gt; 90 days
-                  </th>
-                </tr>
-              </thead>
-              <thead className="table-primary">
-                <tr>
-                  <th>#</th>
-                  <th style={{ width: "150px" }}>Task Name</th>
-                  <th>Task Code</th>
-                  <th>Task Ageing</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ageDemand.length > 0 ? (
-                  ageDemand.map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item["Task Name"]}</td>
-                      <td>{item["Task Code"]}</td>
-                      <td>{item["Task Type"]}</td>                    
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted">
-                      No records found 
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-            </div>
-          </Card>
-        </Col>
+      {/* Right Table */}
+      <Grid item  size={6}>
+        <Card sx={{ boxShadow: 3 }}>
+          <CardContent sx={{ p: 0 }}>
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 300, overflowY: "auto" }}
+            >
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      align="center"
+                      sx={{
+                        backgroundColor: "grey.900",
+                        color: "white",
+                        fontWeight: "bold",
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 2,
+                      }}
+                    >
+                      PRESALES + Customer Interview No
+                    </TableCell>
+                  </TableRow>
+                  <TableRow sx={{ backgroundColor: "warning.light" }}>
+                    <TableCell>#</TableCell>
+                    <TableCell sx={{ width: 150 }}>Task Name</TableCell>
+                    <TableCell>Task Code</TableCell>
+                    <TableCell>Task Ageing</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {techReject.length > 0 ? (
+                    techReject.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item["Task Name"]}</TableCell>
+                        <TableCell>{item["Task Code"]}</TableCell>
+                        <TableCell>{item["Task Type"]}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">
+                          No records found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid> <br/>
+    <Grid container spacing={3}>
+      {/* Left Table - Demand > 90 days */}
+      <Grid item size={6}>
+        <Card sx={{ boxShadow: 3 }}>
+          <CardContent sx={{ p: 0 }}>
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 300, overflowY: "auto" }}
+            >
+              <Table stickyHeader size="small">
+                <TableHead>
+                  {/* Title Header */}
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      align="center"
+                      sx={{
+                        backgroundColor: "grey.900",
+                        color: "white",
+                        fontWeight: "bold",
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 2,
+                      }}
+                    >
+                      Demand &gt; 90 days
+                    </TableCell>
+                  </TableRow>
+                  {/* Column Headers */}
+                  <TableRow sx={{ backgroundColor: "primary.light" }}>
+                    <TableCell>#</TableCell>
+                    <TableCell sx={{ width: 150 }}>Task Name</TableCell>
+                    <TableCell>Task Code</TableCell>
+                    <TableCell>Task Ageing</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {ageDemand.length > 0 ? (
+                    ageDemand.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item["Task Name"]}</TableCell>
+                        <TableCell>{item["Task Code"]}</TableCell>
+                        <TableCell>{item["Task Type"]}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">
+                          No records found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Grid>
 
-        {/* Table 2 */}
-        <Col xs={12} lg={6}>
-          <Card className="h-60 shadow-sm">
-            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-            <Table striped bordered hover size="sm">
-              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                <tr>
-                   <th colSpan={4} className="text-center">
-                    PRESALES + Customer Interview No
-                  </th>
-                </tr>
-              </thead>
-              <thead className="table-warning">
-                <tr>
-                  <th>#</th>
-                  <th style={{ width: "150px" }}>Task Name</th>
-                  <th>Task Code</th>
-                  <th>Task Ageing</th>
-                </tr>
-              </thead>
-              <tbody>
-                {techReject.length > 0 ? (
-                  techReject.map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item["Task Name"]}</td>
-                      <td>{item["Task Code"]}</td>
-                      <td>{item["Task Type"]}</td>                    
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted">
-                      No records found 
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-            </div>
-          </Card>
-        </Col>        
-      </Row>
+      {/* Right Table - PRESALES */}
+      <Grid item size={6}>
+        <Card sx={{ boxShadow: 3 }}>
+          <CardContent sx={{ p: 0 }}>
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 300, overflowY: "auto" }}
+            >
+              <Table stickyHeader size="small">
+                <TableHead>
+                  {/* Title Header */}
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      align="center"
+                      sx={{
+                        backgroundColor: "grey.900",
+                        color: "white",
+                        fontWeight: "bold",
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 2,
+                      }}
+                    >
+                      PRESALES + Customer Interview No
+                    </TableCell>
+                  </TableRow>
+                  {/* Column Headers */}
+                  <TableRow sx={{ backgroundColor: "warning.light" }}>
+                    <TableCell>#</TableCell>
+                    <TableCell sx={{ width: 150 }}>Task Name</TableCell>
+                    <TableCell>Task Code</TableCell>
+                    <TableCell>Task Ageing</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {techReject.length > 0 ? (
+                    techReject.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item["Task Name"]}</TableCell>
+                        <TableCell>{item["Task Code"]}</TableCell>
+                        <TableCell>{item["Task Type"]}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">
+                          No records found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
     </Container>
     </>
   );
