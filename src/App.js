@@ -5,6 +5,7 @@ import TrendAnalysis from './components/TrendAnalysis';
 import ExcelUploader from './components/ExcelUploader';
 import JSONUploader from './components/JSONUploader';
 import FeedbackDashboard from './components/FeedbackDashboard/FeedbackDashboard';
+import DemandDashboard from './components/DemandDashboard/DemandDashboard';
 import DataManagement from './components/DataManagement';
 import { calculateStatusCounts } from './utils/businessLogic';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -87,6 +88,11 @@ const Dashboard = () => {
       name: 'Capacity Planning',
       icon: '🏗️',
       description: 'Resource Capacity Management'
+    },
+    'demand-planning': {
+      name: 'Demand Planning',
+      icon: '🏗️',
+      description: 'Demand Management'
     }
   };
 
@@ -403,8 +409,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="App">
+    <div>
       {/* Header */}
+      {currentDashboard !== 'demand-planning' && (
       <header className={`dashboard-header ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="header-content">
           <div className="header-left">
@@ -432,7 +439,7 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-
+      )}
       {/* Side Navigation */}
       <div className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
@@ -470,7 +477,7 @@ const Dashboard = () => {
       )}
 
       {/* Main Content */}
-      <div className={`dashboard-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <div className={`${currentDashboard === 'demand-planning' ? '' : 'dashboard-content'} ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Show different dashboards based on current selection */}
         {currentDashboard === 'supply-quality' ? (
           activeView === 'upload' ? (
@@ -874,6 +881,9 @@ const Dashboard = () => {
             onDataLoaded={handleDataLoaded}
             onError={handleError}
           />
+        ) : currentDashboard === 'demand-planning' ? (
+          // Analytics Dashboard
+          <DemandDashboard/>
         ) : (
           // Other dashboards - show dummy content
           <DummyDashboard 
