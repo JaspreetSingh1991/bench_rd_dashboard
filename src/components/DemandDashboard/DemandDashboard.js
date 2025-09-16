@@ -27,6 +27,8 @@ export default function DemandDashboard() {
   const [screenRejectLen, setScreenRejectLen] = useState(0);
   const [ageDemand, setAgeDemand] = useState(0);
   const [ageDemandLen, setAgeDemandLen] = useState(0);
+  const [demand, setDemand] = useState(0);
+  const [demandLen, setDemandLen] = useState(0);
 
   useEffect(() => {
     if (uploadedData) {
@@ -46,6 +48,10 @@ export default function DemandDashboard() {
       item["Task Ageing"]?.trim() === "91 to 120");
       setAgeDemand(filteredAgeDemand);
       setAgeDemandLen(filteredAgeDemand.length);
+
+      setDemandLen(uploadedData.length);
+      setDemand(uploadedData);
+
 
     }
   }, [uploadedData]);
@@ -113,6 +119,22 @@ export default function DemandDashboard() {
     
     <Container maxWidth="xxl" sx={{ pl: "70px", my: 4 }} style={{ paddingLeft: '70px' }}>
       <Grid container spacing={3}>
+        {/* Card 4 */}
+        <Grid item size={3}>
+          <Card
+            sx={{
+              bgcolor: "warning.main",
+              color: "white",
+              boxShadow: 2,
+              height: 100
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6">Total Demands</Typography>
+              <Typography variant="h4">{demandLen}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
         {/* Card 1 */}
         <Grid item size={3}>
           <Card
@@ -166,24 +188,7 @@ export default function DemandDashboard() {
               <Typography variant="h4">{ageDemandLen}</Typography>
             </CardContent>
           </Card>
-        </Grid>
-
-        {/* Card 4 */}
-        <Grid item size={3}>
-          <Card
-            sx={{
-              bgcolor: "warning.main",
-              color: "white",
-              boxShadow: 2,
-              height: 100
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6">Test Count 2</Typography>
-              <Typography variant="h4">99</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        </Grid>        
       </Grid>
     </Container>
     <Container maxWidth="xxl" sx={{ pl: "70px", my: 4 }} style={{ paddingLeft: '70px' }}>
@@ -201,7 +206,7 @@ export default function DemandDashboard() {
                 <TableHead>
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       align="center"
                       sx={{
                         backgroundColor: "grey.900",
@@ -218,8 +223,9 @@ export default function DemandDashboard() {
                   <TableRow sx={{ backgroundColor: "primary.light" }}>
                     <TableCell>#</TableCell>
                     <TableCell sx={{ width: 150 }}>Task Name</TableCell>
-                    <TableCell>Task Code</TableCell>
-                    <TableCell>Task Ageing</TableCell>
+                    <TableCell>SUB PRACTICE</TableCell>
+                    <TableCell>Account Name</TableCell>
+                    <TableCell>EDM</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -228,13 +234,14 @@ export default function DemandDashboard() {
                       <TableRow key={index}>
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>{item["Task Name"]}</TableCell>
-                        <TableCell>{item["Task Code"]}</TableCell>
-                        <TableCell>{item["Task Type"]}</TableCell>
+                        <TableCell>{item["SUB PRACTICE"]}</TableCell>
+                        <TableCell>{item["Final Client Name"]}</TableCell>
+                        <TableCell>{item["EDM"]}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">
                           No records found
                         </Typography>
@@ -260,7 +267,7 @@ export default function DemandDashboard() {
                 <TableHead>
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       align="center"
                       sx={{
                         backgroundColor: "grey.900",
@@ -271,29 +278,31 @@ export default function DemandDashboard() {
                         zIndex: 2,
                       }}
                     >
-                      PRESALES + Customer Interview No
+                      All Demands
                     </TableCell>
                   </TableRow>
                   <TableRow sx={{ backgroundColor: "warning.light" }}>
                     <TableCell>#</TableCell>
                     <TableCell sx={{ width: 150 }}>Task Name</TableCell>
-                    <TableCell>Task Code</TableCell>
-                    <TableCell>Task Ageing</TableCell>
+                    <TableCell>SUB PRACTICE</TableCell>
+                    <TableCell>Account Name</TableCell>
+                    <TableCell>EDM</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {techReject.length > 0 ? (
-                    techReject.map((item, index) => (
+                  {demand.length > 0 ? (
+                    demand.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>{item["Task Name"]}</TableCell>
-                        <TableCell>{item["Task Code"]}</TableCell>
-                        <TableCell>{item["Task Type"]}</TableCell>
+                        <TableCell>{item["SUB PRACTICE"]}</TableCell>
+                        <TableCell>{item["Final Client Name"]}</TableCell>
+                        <TableCell>{item["EDM"]}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">
                           No records found
                         </Typography>
@@ -321,7 +330,7 @@ export default function DemandDashboard() {
                   {/* Title Header */}
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       align="center"
                       sx={{
                         backgroundColor: "grey.900",
@@ -339,8 +348,9 @@ export default function DemandDashboard() {
                   <TableRow sx={{ backgroundColor: "primary.light" }}>
                     <TableCell>#</TableCell>
                     <TableCell sx={{ width: 150 }}>Task Name</TableCell>
-                    <TableCell>Task Code</TableCell>
-                    <TableCell>Task Ageing</TableCell>
+                    <TableCell>SUB PRACTICE</TableCell>
+                    <TableCell>Account Name</TableCell>
+                    <TableCell>EDM</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -349,13 +359,14 @@ export default function DemandDashboard() {
                       <TableRow key={index}>
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>{item["Task Name"]}</TableCell>
-                        <TableCell>{item["Task Code"]}</TableCell>
-                        <TableCell>{item["Task Type"]}</TableCell>
+                        <TableCell>{item["SUB PRACTICE"]}</TableCell>
+                        <TableCell>{item["Final Client Name"]}</TableCell>
+                        <TableCell>{item["EDM"]}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">
                           No records found
                         </Typography>
@@ -382,7 +393,7 @@ export default function DemandDashboard() {
                   {/* Title Header */}
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       align="center"
                       sx={{
                         backgroundColor: "grey.900",
@@ -400,23 +411,25 @@ export default function DemandDashboard() {
                   <TableRow sx={{ backgroundColor: "warning.light" }}>
                     <TableCell>#</TableCell>
                     <TableCell sx={{ width: 150 }}>Task Name</TableCell>
-                    <TableCell>Task Code</TableCell>
-                    <TableCell>Task Ageing</TableCell>
+                    <TableCell>SUB PRACTICE</TableCell>
+                    <TableCell>Account Name</TableCell>
+                    <TableCell>EDM</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {techReject.length > 0 ? (
-                    techReject.map((item, index) => (
+                  {screenReject.length > 0 ? (
+                    screenReject.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>{item["Task Name"]}</TableCell>
-                        <TableCell>{item["Task Code"]}</TableCell>
-                        <TableCell>{item["Task Type"]}</TableCell>
+                        <TableCell>{item["SUB PRACTICE"]}</TableCell>
+                        <TableCell>{item["Final Client Name"]}</TableCell>
+                        <TableCell>{item["EDM"]}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">
                           No records found
                         </Typography>
