@@ -2,11 +2,16 @@ import React from 'react';
 
 import Analytics from './components/Analytics';
 import TrendAnalysis from './components/TrendAnalysis';
+import MatrixView from './components/MatrixView/MatrixView';
 import ExcelUploader from './components/ExcelUploader';
 import JSONUploader from './components/JSONUploader';
 import FeedbackDashboard from './components/FeedbackDashboard/FeedbackDashboard';
 import DemandDashboard from './components/DemandDashboard/DemandDashboard';
 import DataManagement from './components/DataManagement';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
+import Sidebar from './components/Layout/Sidebar';
+import DetailsModal from './components/DetailsModal/DetailsModal';
 import { calculateStatusCounts } from './utils/businessLogic';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { useDashboardData } from './hooks/useDashboardData';
@@ -193,6 +198,10 @@ const Dashboard = () => {
   if (!statusCounts['RD']) {
     statusCounts['RD'] = {};
   }
+  // Ensure Non Deployable structure exists
+  if (!statusCounts['Non Deployable']) {
+    statusCounts['Non Deployable'] = {};
+  }
   
   // Ensure each grade has the proper structure for both Bench and RD
   grades.forEach(grade => {
@@ -213,6 +222,31 @@ const Dashboard = () => {
         'Available - High Bench Ageing 90+': 0
       };
     }
+    if (!statusCounts['Non Deployable'][grade]) {
+      statusCounts['Non Deployable'][grade] = {
+        'ML/LL': 0,
+        'BOTP': 0
+      };
+    }
+  });
+  
+  // Populate Non Deployable counts (ML/LL and BOTP) based on business rules
+  dataToUse.forEach(record => {
+    const recordBenchRd = record['Bench/RD'];
+    if (recordBenchRd !== 'Non Deployable') return;
+    const grade = record['Grade'];
+    if (!grades.includes(grade)) return;
+    const deploymentStatus = (record['Deployment Status'] || '').toLowerCase();
+    const match1 = (record['Match 1'] || '').toString().toLowerCase();
+    // ML/LL: Non Deployable + Deployment Status includes 'Available' + Match 1 contains 'ML Case'
+    const isAvailable = deploymentStatus.includes('available');
+    if (isAvailable && match1.includes('ml case')) {
+      statusCounts['Non Deployable'][grade]['ML/LL'] = (statusCounts['Non Deployable'][grade]['ML/LL'] || 0) + 1;
+    }
+    // BOTP: Non Deployable + Deployment Status includes 'Available' + Match 1 does NOT contain 'ML Case'
+    if (isAvailable && !match1.includes('ml case')) {
+      statusCounts['Non Deployable'][grade]['BOTP'] = (statusCounts['Non Deployable'][grade]['BOTP'] || 0) + 1;
+    }
   });
   }
 
@@ -220,7 +254,7 @@ const Dashboard = () => {
   const handleCountClick = (benchRd, grade, status, count) => {
     if (count === 0) return;
     
-    let filteredData = data.filter(record => {
+    let filteredData = dataToUse.filter(record => {
       const recordBenchRd = record['Bench/RD'];
       const recordGrade = record['Grade'];
       
@@ -232,6 +266,8 @@ const Dashboard = () => {
         // For Bench row, include both Bench and ML Return records
         return recordBenchRd === 'Bench' || 
                (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+      } else if (benchRd === 'Non Deployable') {
+        return recordBenchRd === 'Non Deployable';
       } else {
         return recordBenchRd === benchRd;
       }
@@ -270,23 +306,29 @@ const Dashboard = () => {
           return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
         });
         break;
-      case 'Available - Relocation Constraint':
-        filteredData = filteredData.filter(record => {
-          const relocation = (record['Relocation'] || '').toString().trim();
-          const isRelocationEmpty = relocation === '' || relocation === '-';
-          const isDeploymentStatusAvailable = record['Deployment Status'] && record['Deployment Status'].trim().toLowerCase().includes('available');
-          const isMLConstraint = (record['Bench/RD'] || '').toLowerCase().includes('ml return') && 
-            (record['Deployment Status'] || '').toLowerCase().includes('available');
-          
-          return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
-        });
-        break;
+      
       case 'Available - High Bench Ageing 90+':
         filteredData = filteredData.filter(record => {
           const deploymentStatus = record['Deployment Status'] || '';
           const aging = Number(record['Aging']) || 0;
           const isDeploymentStatusAvailable = deploymentStatus.toLowerCase().includes('available');
-          return isDeploymentStatusAvailable && aging > 90;
+          return isDeploymentStatusAvailable && aging >= 90;
+        });
+        break;
+      case 'ML/LL':
+        filteredData = filteredData.filter(record => {
+          const deploymentStatus = (record['Deployment Status'] || '').toLowerCase();
+          const match1 = (record['Match 1'] || '').toString().toLowerCase();
+          const isAvailable = deploymentStatus.includes('available');
+          return isAvailable && match1.includes('ml case');
+        });
+        break;
+      case 'BOTP':
+        filteredData = filteredData.filter(record => {
+          const deploymentStatus = (record['Deployment Status'] || '').toLowerCase();
+          const match1 = (record['Match 1'] || '').toString().toLowerCase();
+          const isAvailable = deploymentStatus.includes('available');
+          return isAvailable && !match1.includes('ml case');
         });
         break;
       default:
@@ -307,7 +349,7 @@ const Dashboard = () => {
   const handleRowTotalClick = (benchRd, status, count) => {
     if (count === 0) return;
     
-    const filteredData = data.filter(record => {
+    const filteredData = dataToUse.filter(record => {
       const recordBenchRd = record['Bench/RD'];
       const recordStatus = record['Deployment Status'] || '';
       
@@ -317,6 +359,8 @@ const Dashboard = () => {
         const isBench = recordBenchRd === 'Bench' || 
                (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
         if (!isBench) return false;
+      } else if (benchRd === 'Non Deployable') {
+        if (recordBenchRd !== 'Non Deployable') return false;
       } else {
         if (recordBenchRd !== benchRd) return false;
       }
@@ -334,7 +378,19 @@ const Dashboard = () => {
         return isDeploymentStatusAvailable && isRelocationEmpty && !isMLConstraint;
       } else if (status === 'Available - High Bench Ageing 90+') {
         const aging = Number(record['Aging']) || 0;
-        return recordStatus.toLowerCase().includes('available') && aging > 90;
+        return recordStatus.toLowerCase().includes('available') && aging >= 90;
+      } else if (status === 'ML/LL') {
+        const isAvailable = recordStatus.toLowerCase().includes('available');
+        const match1 = (record['Match 1'] || '').toString().toLowerCase();
+        return isAvailable && match1.includes('ml case');
+      } else if (status === 'ML/LL') {
+        const isAvailable = recordStatus.toLowerCase().includes('available');
+        const match1 = (record['Match 1'] || '').toString().toLowerCase();
+        return isAvailable && match1.includes('ml case');
+      } else if (status === 'BOTP') {
+        const isAvailable = recordStatus.toLowerCase().includes('available');
+        const match1 = (record['Match 1'] || '').toString().toLowerCase();
+        return isAvailable && !match1.includes('ml case');
       } else {
         return recordStatus.toLowerCase().includes(status.toLowerCase());
       }
@@ -350,18 +406,26 @@ const Dashboard = () => {
     actions.setDetailsOpen(true);
   };
 
-  // Handle grade total click (All Statuses for a specific Grade across all Bench/RD)
-  const handleGradeTotalClick = (grade, count) => {
+  // Handle grade total click (All Statuses for a specific Grade within a specific Bench/RD)
+  const handleGradeTotalClick = (benchRd, grade, count) => {
     if (count === 0) return;
     
-    const filteredData = data.filter(record => {
-      return record['Grade'] === grade;
+    const filteredData = dataToUse.filter(record => {
+      if (record['Grade'] !== grade) return false;
+      const recordBenchRd = record['Bench/RD'];
+      if (benchRd === 'Bench') {
+        return recordBenchRd === 'Bench' || (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+      } else if (benchRd === 'Non Deployable') {
+        return recordBenchRd === 'Non Deployable';
+      } else {
+        return recordBenchRd === benchRd;
+      }
     });
     
     actions.setDetailsData(filteredData);
-    actions.setDetailsTitle(`${grade} - All Statuses - All Types`);
+    actions.setDetailsTitle(`${benchRd} - ${grade} - All Statuses`);
     actions.setDetailsFilters({
-      'Bench/RD': 'All Types',
+      'Bench/RD': benchRd,
       'Grade': grade,
       'Status': 'All Statuses'
     });
@@ -372,7 +436,7 @@ const Dashboard = () => {
   const handleGrandTotalClick = (benchRd, count) => {
     if (count === 0) return;
     
-    const filteredData = data.filter(record => {
+    const filteredData = dataToUse.filter(record => {
       const recordBenchRd = record['Bench/RD'];
       
       // Check Bench/RD match with special handling for Bench row
@@ -380,6 +444,8 @@ const Dashboard = () => {
         // For Bench row, include both Bench and ML Return records
         return recordBenchRd === 'Bench' || 
                (recordBenchRd && recordBenchRd.toLowerCase().includes('ml return'));
+      } else if (benchRd === 'Non Deployable') {
+        return recordBenchRd === 'Non Deployable';
       } else {
         return recordBenchRd === benchRd;
       }
@@ -411,70 +477,22 @@ const Dashboard = () => {
   return (
     <div className="App">
       {/* Header */}
-      {currentDashboard !== 'demand-planning' && (
-      <header className={`dashboard-header ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="header-content">
-          <div className="header-left">
-            <button 
-              className="sidebar-toggle-btn"
-              onClick={() => actions.setSidebarOpen(!sidebarOpen)}
-            >
-              ☰
-            </button>
-          <div className="logo-section">
-              <div className="logo-icon">{dashboards[currentDashboard]?.icon || '📊'}</div>
-            <div className="logo-text">
-                <h1 className="logo-title">{dashboards[currentDashboard]?.name || 'Dashboard'}</h1>
-                <p className="logo-subtitle">{dashboards[currentDashboard]?.description || 'Management System'}</p>
-              </div>
-            </div>
-          </div>
-          <div className="header-actions">
-            <DataManagement />
-            {currentDashboard === 'feedback' ? (
-              <JSONUploader onDataLoaded={handleDataLoaded} onError={handleError} />
-            ) : (
-              <ExcelUploader onDataLoaded={handleDataLoaded} onError={handleError} />
-            )}
-          </div>
-        </div>
-      </header>
-      )}
+      <Header
+        currentDashboard={currentDashboard}
+        dashboards={dashboards}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => actions.setSidebarOpen(!sidebarOpen)}
+        onDataLoaded={handleDataLoaded}
+        onError={handleError}
+      />
       {/* Side Navigation */}
-      <div className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-header">
-          <h3>Dashboards</h3>
-          <button 
-            className="sidebar-close-btn"
-            onClick={() => actions.setSidebarOpen(false)}
-          >
-            ×
-          </button>
-        </div>
-        <div className="sidebar-content">
-          {Object.entries(dashboards).map(([key, dashboard]) => (
-            <div
-              key={key}
-              className={`sidebar-item ${currentDashboard === key ? 'active' : ''}`}
-              onClick={() => handleDashboardSwitch(key)}
-            >
-              <div className="sidebar-item-icon">{dashboard.icon}</div>
-              <div className="sidebar-item-content">
-                <div className="sidebar-item-title">{dashboard.name}</div>
-                <div className="sidebar-item-description">{dashboard.description}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="sidebar-overlay"
-          onClick={() => actions.setSidebarOpen(false)}
-        />
-      )}
+      <Sidebar
+        dashboards={dashboards}
+        currentDashboard={currentDashboard}
+        sidebarOpen={sidebarOpen}
+        onClose={() => actions.setSidebarOpen(false)}
+        onSelectDashboard={handleDashboardSwitch}
+      />
 
       {/* Main Content */}
       <div className={`${currentDashboard === 'demand-planning' ? '' : 'dashboard-content'} ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -511,279 +529,24 @@ const Dashboard = () => {
                 >
                   Trends
                 </button>
+                
               </div>
             </div>
             )}
 
             {/* Matrix View */}
             {activeView === 'matrix' && (
-            <div className="matrix-container">
-              {!dataLoaded ? (
-                <div style={{
-                  padding: '60px 20px',
-                  textAlign: 'center',
-                  backgroundColor: '#f9fafb',
-                  border: '2px dashed #d1d5db',
-                  borderRadius: '8px',
-                  margin: '20px'
-                }}>
-                  <div style={{
-                    fontSize: '48px',
-                    color: '#9ca3af',
-                    marginBottom: '16px'
-                  }}>
-                    📊
-                  </div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    margin: '0 0 8px 0'
-                  }}>
-                    Please upload the excel
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#6b7280',
-                    margin: '0'
-                  }}>
-                    Upload an Excel file to view the resource matrix
-                  </p>
-                </div>
-              ) : (
-                <div 
-                    ref={tableContainerRef}
-                    tabIndex={0}
-                  style={{ 
-                        outline: 'none'
-                  }}
-                >
-                  {dataToUse.length > 0 ? (
-                    <table className="matrix-table">
-                      <thead>
-                        <tr>
-                          <th style={{ minWidth: '120px' }}>Bench/RD</th>
-                          <th style={{ minWidth: '120px' }}>Status</th>
-                          {grades.map((grade, index) => (
-                            <th key={grade} style={{ minWidth: '80px' }}>
-                            {grade}
-                            </th>
-                          ))}
-                          <th style={{ minWidth: '100px' }}>Grand Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      {Object.keys(statusCounts).sort((a, b) => {
-                        if (a === 'Bench' && b === 'RD') return -1;
-                        if (a === 'RD' && b === 'Bench') return 1;
-                        return 0;
-                      }).map((benchRd, benchIndex) => {
-                        // Define status types based on Bench/RD type
-                        const statusTypes = benchRd === 'Bench' ? [
-                          'Client Blocked',
-                          'Internal Blocked',
-                          'Available - Location Constraint',
-                          'Available - ML return constraint',
-                          'Available - High Bench Ageing 90+'
-                        ] : [
-                          'Client Blocked',
-                          'Internal Blocked',
-                          'Available - Location Constraint',
-                          'Available - High Bench Ageing 90+'
-                        ];
-                        const totalRows = statusTypes.length + 1; // +1 for the total row
-                        
-                        return (
-                          <React.Fragment key={benchRd}>
-                            {statusTypes.map((status, statusIndex) => {
-                              // Get the data for this specific status across all grades
-                              const rowData = {};
-                              grades.forEach(grade => {
-                                rowData[grade] = statusCounts[benchRd]?.[grade]?.[status] || 0;
-                              });
-                              const rowTotal = Object.values(rowData).reduce((sum, count) => sum + count, 0);
-
-                              return (
-                                <tr key={`${benchRd}-${status}`}>
-                                  {statusIndex === 0 && (
-                                    <td 
-                                      className="bench-rd-cell"
-                                      rowSpan={totalRows}
-                                      style={{ 
-                                        verticalAlign: 'middle',
-                                        textAlign: 'center',
-                                        padding: '12px 8px',
-                                        backgroundColor: getBenchRdColor(benchRd).bg
-                                      }}
-                                    >
-                                      <span 
-                                        className="bench-rd-badge"
-                                        style={{
-                                          backgroundColor: getBenchRdColor(benchRd).bg,
-                                          color: getBenchRdColor(benchRd).text,
-                                          borderColor: getBenchRdColor(benchRd).border
-                                        }}
-                                      >
-                              {benchRd}
-                                      </span>
-                                    </td>
-                                  )}
-                                  <td className="status-cell">
-                              {status}
-                                  </td>
-                                  {grades.map(grade => {
-                                    const count = rowData[grade] || 0;
-                                return (
-                                      <td 
-                                    key={grade} 
-                                        style={{ 
-                                          textAlign: 'center',
-                                      cursor: count > 0 ? 'pointer' : 'default',
-                                          padding: '8px'
-                                    }}
-                                    onClick={() => handleCountClick(benchRd, grade, status, count)}
-                                        title={count > 0 ? `Click to view ${count} records` : 'No records'}
-                                  >
-                                    {count > 0 ? (
-                                          <span 
-                                            className={`matrix-badge ${
-                                              status === 'Client Blocked' ? 'red' :
-                                              status === 'Internal Blocked' ? 'orange' :
-                                              status === 'Available - Location Constraint' ? 'blue' :
-                                              status === 'Available - ML return constraint' ? 'blue' :
-                                              status === 'Available - High Bench Ageing 90+' ? 'purple' :
-                                              'green'
-                                            }`}
-                                            style={{
-                                              cursor: 'pointer',
-                                      transition: 'all 0.2s ease-in-out',
-                                              display: 'inline-block'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                              if (count > 0) {
-                                                e.target.style.transform = 'scale(1.1)';
-                                                e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                                              }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.target.style.transform = 'scale(1)';
-                                              e.target.style.boxShadow = 'none';
-                                            }}
-                                          >
-                                        {count}
-                                          </span>
-                                    ) : (
-                                          <span className="matrix-badge zero">0</span>
-                                    )}
-                                      </td>
-                                );
-                              })}
-                                  <td 
-                                    style={{ 
-                                      textAlign: 'center', 
-                                      fontWeight: 'bold',
-                                      cursor: rowTotal > 0 ? 'pointer' : 'default'
-                                    }}
-                                    onClick={() => handleRowTotalClick(benchRd, status, rowTotal)}
-                                    title={rowTotal > 0 ? `Click to view ${rowTotal} records` : 'No records'}
-                                  >
-                                    {rowTotal > 0 ? (
-                                      <span className="matrix-badge total">{rowTotal}</span>
-                                    ) : (
-                                      <span className="matrix-badge zero">0</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          
-                          {/* Total row for this Bench/RD */}
-                            <tr className="total-row" style={{ backgroundColor: getBenchRdColor(benchRd).bg + '20' }}>
-                              <td 
-                                style={{ 
-                                  fontWeight: 'bold', 
-                                  paddingLeft: '16px',
-                                  backgroundColor: getBenchRdColor(benchRd).bg
-                                }}
-                              >
-                                  {benchRd} TOTAL
-                              </td>
-                              {grades.map(grade => {
-                                const gradeTotal = statusTypes.reduce((sum, status) => {
-                                  return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
-                                }, 0);
-                                  return (
-                                  <td 
-                                    key={grade} 
-                                    style={{ 
-                                      textAlign: 'center', 
-                                      fontWeight: 'bold',
-                                      cursor: gradeTotal > 0 ? 'pointer' : 'default'
-                                    }}
-                                    onClick={() => handleGradeTotalClick(grade, gradeTotal)}
-                                    title={gradeTotal > 0 ? `Click to view ${gradeTotal} records` : 'No records'}
-                                  >
-                                      {gradeTotal > 0 ? (
-                                      <span className="matrix-badge total">{gradeTotal}</span>
-                                    ) : (
-                                      <span className="matrix-badge zero">0</span>
-                                    )}
-                                  </td>
-                                  );
-                                })}
-                              <td 
-                                style={{ 
-                                  textAlign: 'center', 
-                                  fontWeight: 'bold',
-                                  cursor: (() => {
-                                    const grandTotal = grades.reduce((total, grade) => {
-                                      return total + statusTypes.reduce((sum, status) => {
-                                        return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
-                                      }, 0);
-                                    }, 0);
-                                    return grandTotal > 0 ? 'pointer' : 'default';
-                                  })()
-                                }}
-                                onClick={() => {
-                                  const grandTotal = grades.reduce((total, grade) => {
-                                    return total + statusTypes.reduce((sum, status) => {
-                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
-                                    }, 0);
-                                  }, 0);
-                                  handleGrandTotalClick(benchRd, grandTotal);
-                                }}
-                                title={(() => {
-                                  const grandTotal = grades.reduce((total, grade) => {
-                                    return total + statusTypes.reduce((sum, status) => {
-                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
-                                    }, 0);
-                                  }, 0);
-                                  return grandTotal > 0 ? `Click to view ${grandTotal} records` : 'No records';
-                                })()}
-                              >
-                                {(() => {
-                                  const grandTotal = grades.reduce((total, grade) => {
-                                    return total + statusTypes.reduce((sum, status) => {
-                                      return sum + (statusCounts[benchRd]?.[grade]?.[status] || 0);
-                                    }, 0);
-                                  }, 0);
-                                  return grandTotal > 0 ? (
-                                    <span className="matrix-badge total">{grandTotal}</span>
-                                  ) : (
-                                    <span className="matrix-badge zero">0</span>
-                            );
-                          })()}
-                              </td>
-                            </tr>
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  ) : null}
-                </div>
-              )}
-            </div>
+              <MatrixView
+                dataLoaded={dataLoaded}
+                dataToUse={dataToUse}
+                grades={grades}
+                statusCounts={statusCounts}
+                getBenchRdColor={getBenchRdColor}
+                handleCountClick={handleCountClick}
+                handleRowTotalClick={handleRowTotalClick}
+                handleGradeTotalClick={handleGradeTotalClick}
+                handleGrandTotalClick={handleGrandTotalClick}
+              />
             )}
 
             {/* Analytics View */}
@@ -871,6 +634,7 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+            
           </>
           )
         ) : currentDashboard === 'feedback' ? (
@@ -895,163 +659,14 @@ const Dashboard = () => {
       </div>
 
       {/* Professional Details Modal */}
-      {detailsOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h2 className="modal-title">
-                {detailsTitle}
-                <span className="modal-count-badge">
-                  {detailsData.length} records
-                </span>
-              </h2>
-              <button
-                className="modal-close-btn"
-                onClick={() => actions.setDetailsOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-content">
-              {detailsData.length > 0 ? (
-                <div className="modal-table-container">
-                  <table className="modal-table">
-                    <thead>
-                      <tr>
-                        <th>Resource</th>
-                        <th>Grade</th>
-                        <th>Skill Set</th>
-                        <th>Match 1</th>
-                        <th>Match 2</th>
-                        <th>Aging</th>
-                        <th>Location</th>
-                        <th>Relocation</th>
-                        <th>Insights</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detailsData.map((record, index) => {
-                        const getStatusTagClass = (status) => {
-                          if (status?.toLowerCase().includes('available')) return 'modal-tag-status-available';
-                          if (status?.toLowerCase().includes('blocked')) return 'modal-tag-status-blocked';
-                          if (status?.toLowerCase().includes('constraint')) return 'modal-tag-status-constraint';
-                          if (status?.toLowerCase().includes('aging')) return 'modal-tag-status-aging';
-                          return 'modal-tag-status-available';
-                        };
-
-                        const getGradeTagClass = (grade) => {
-                          return 'modal-tag-grade';
-                        };
-
-                        const getInsightTags = (record) => {
-                          const tags = [];
-                          const aging = parseInt(record['Aging']) || 0;
-                          const status = record['Deployment Status'] || '';
-                          const type = record['Bench/RD'] || '';
-                          const relocation = record['Relocation'] || '';
-
-                          // High aging insight
-                          if (aging > 90) {
-                            tags.push({ text: 'High Aging', class: 'modal-tag-aging-high' });
-                          } else if (aging > 30) {
-                            tags.push({ text: 'Medium Aging', class: 'modal-tag-aging-medium' });
-                          }
-
-                          // ML Return insight
-                          if (type.toLowerCase().includes('ml return')) {
-                            tags.push({ text: 'ML Return', class: 'modal-tag-ml-return' });
-                          }
-
-                          // Location constraint insight
-                          if (status.toLowerCase().includes('constraint')) {
-                            tags.push({ text: 'Location Constraint', class: 'modal-tag-status-constraint' });
-                          }
-
-                          // Relocation insight
-                          if (relocation && relocation !== '-' && relocation !== '') {
-                            tags.push({ text: 'Relocatable', class: 'modal-tag-relocation' });
-                          }
-
-                          return tags;
-                        };
-
-                        const insightTags = getInsightTags(record);
-
-                        return (
-                          <tr key={index}>
-                            <td>
-                              <div className="modal-resource-name">
-                                {record['Name'] || record['Employee Name'] || record['Resource Name'] || record['Employee'] || record['Resource'] || `Resource ${index + 1}`}
-                              </div>
-                            </td>
-                            <td>
-                              <span className={`modal-tag ${getGradeTagClass(record['Grade'])}`}>
-                                {record['Grade'] || 'N/A'}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="modal-tag modal-tag-skill">
-                                {record['Skill Set'] || record['Skills'] || record['Skill'] || 'N/A'}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="modal-tag modal-tag-match">
-                                {record['Match 1']?.toLowerCase().includes('ml case') ? 'ML Case' : (record['Match 1'] || 'N/A')}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="modal-tag modal-tag-match">
-                                {record['Match 2']?.toLowerCase().includes('ml case') ? 'ML Case' : (record['Match 2'] || 'N/A')}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`modal-tag ${getAgingTagClass(record['Aging'])}`}>
-                                {record['Aging'] || 'N/A'} days
-                              </span>
-                            </td>
-                            <td>
-                              <span className="modal-tag modal-tag-location">
-                                {record['Location'] || 'N/A'}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="modal-tag modal-tag-location">
-                                {record['Relocation'] || 'N/A'}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="modal-tag-container">
-                                {insightTags.map((tag, tagIndex) => (
-                                  <span key={tagIndex} className={`modal-tag ${tag.class}`}>
-                                    {tag.text}
-                                  </span>
-                                ))}
-                                {insightTags.length === 0 && (
-                                  <span className="modal-tag modal-tag-location">
-                                    Standard
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="modal-empty-state">
-                  <div className="modal-empty-icon">📋</div>
-                  <div className="modal-empty-title">No Records Found</div>
-                  <div className="modal-empty-description">
-                    No records found for the selected criteria.
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <DetailsModal
+        open={detailsOpen}
+        title={detailsTitle}
+        data={detailsData}
+        onClose={() => actions.setDetailsOpen(false)}
+        getAgingTagClass={getAgingTagClass}
+      />
+      <Footer />
     </div>
   );
 };

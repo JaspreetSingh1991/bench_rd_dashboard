@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import DataCards from './DataCards';
 import DataTable from './DataTable';
+import TechRejectInsights from './TechRejectInsights';
 import JSONFileValidator from './JSONFileValidator';
 import './FeedbackDashboard.css';
 
@@ -9,6 +10,7 @@ const FeedbackDashboard = ({ data, onDataLoaded, onError }) => {
   const [selectedTableData, setSelectedTableData] = useState(null);
   const [selectedTableType, setSelectedTableType] = useState(null);
   const [showTable, setShowTable] = useState(false);
+  const [showTechInsights, setShowTechInsights] = useState(false);
 
   // Process data when it changes
   React.useEffect(() => {
@@ -36,11 +38,17 @@ const FeedbackDashboard = ({ data, onDataLoaded, onError }) => {
 
   // Handle card click to show table
   const handleCardClick = (type, tableData) => {
-    if (tableData) {
+    if (!tableData) return;
+    if (type === 'techReject') {
       setSelectedTableData(tableData);
-      setSelectedTableType(type);
-      setShowTable(true);
+      setShowTechInsights(true);
+      setShowTable(false);
+      setSelectedTableType(null);
+      return;
     }
+    setSelectedTableData(tableData);
+    setSelectedTableType(type);
+    setShowTable(true);
   };
 
   // Handle table close
@@ -48,6 +56,11 @@ const FeedbackDashboard = ({ data, onDataLoaded, onError }) => {
     setShowTable(false);
     setSelectedTableData(null);
     setSelectedTableType(null);
+  };
+
+  const handleTechInsightsBack = () => {
+    setShowTechInsights(false);
+    setSelectedTableData(null);
   };
 
   // Check if all 3 required files are present
@@ -81,6 +94,8 @@ const FeedbackDashboard = ({ data, onDataLoaded, onError }) => {
             </ul>
           </div>
         </div>
+      ) : showTechInsights ? (
+        <TechRejectInsights data={selectedTableData} onBack={handleTechInsightsBack} />
       ) : (
         <DataCards 
           data={processedData} 
