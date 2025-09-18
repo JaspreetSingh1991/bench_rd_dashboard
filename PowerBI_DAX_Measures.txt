@@ -1,0 +1,311 @@
+# Power BI DAX Measures for Feedback Dashboard
+
+## Basic Count Measures
+
+```DAX
+// Screen Reject Count
+Screen Reject Count = COUNTROWS('Screen_Reject')
+
+// Tech Reject Count  
+Tech Reject Count = COUNTROWS('Tech_Reject')
+
+// Total Rejections
+Total Rejections = [Screen Reject Count] + [Tech Reject Count]
+
+// Total Opportunities
+Total Opportunities = SUMX('GroupOutput', 'GroupOutput'[Row Count])
+
+// Total Candidates
+Total Candidates = COUNTROWS('GroupOutput')
+```
+
+## Percentage and Rate Measures
+
+```DAX
+// Screen Reject Percentage
+Screen Reject % = 
+DIVIDE([Screen Reject Count], [Total Rejections], 0) * 100
+
+// Tech Reject Percentage
+Tech Reject % = 
+DIVIDE([Tech Reject Count], [Total Rejections], 0) * 100
+
+// Overall Rejection Rate
+Rejection Rate = 
+DIVIDE([Total Rejections], [Total Opportunities], 0) * 100
+
+// Success Rate
+Success Rate = 100 - [Rejection Rate]
+
+// Average Opportunities per Candidate
+Avg Opportunities Per Candidate = 
+DIVIDE([Total Opportunities], [Total Candidates], 0)
+```
+
+## Top Role Analysis
+
+```DAX
+// Top Interviewed Role (Single Role)
+Top Interviewed Role = 
+VAR RoleAnalysis = 
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'GroupOutput_Detailed', 
+            'GroupOutput_Detailed'[Role for which interviewed]
+        ),
+        "RoleCount", 
+        COUNTROWS(
+            FILTER(
+                'GroupOutput_Detailed',
+                'GroupOutput_Detailed'[Role for which interviewed] = EARLIER('GroupOutput_Detailed'[Role for which interviewed])
+            )
+        )
+    )
+VAR TopRole = TOPN(1, RoleAnalysis, [RoleCount], DESC)
+RETURN
+    MAXX(TopRole, 'GroupOutput_Detailed'[Role for which interviewed])
+
+// Top Interviewed Role Count
+Top Interviewed Role Count = 
+VAR RoleAnalysis = 
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'GroupOutput_Detailed', 
+            'GroupOutput_Detailed'[Role for which interviewed]
+        ),
+        "RoleCount", 
+        COUNTROWS(
+            FILTER(
+                'GroupOutput_Detailed',
+                'GroupOutput_Detailed'[Role for which interviewed] = EARLIER('GroupOutput_Detailed'[Role for which interviewed])
+            )
+        )
+    )
+VAR TopRole = TOPN(1, RoleAnalysis, [RoleCount], DESC)
+RETURN
+    MAXX(TopRole, [RoleCount])
+
+// Top 3 Roles Table
+Top 3 Roles = 
+TOPN(3, 
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'GroupOutput_Detailed',
+            'GroupOutput_Detailed'[Role for which interviewed]
+        ),
+        "Count", 
+        COUNTROWS(
+            FILTER(
+                'GroupOutput_Detailed',
+                'GroupOutput_Detailed'[Role for which interviewed] = EARLIER('GroupOutput_Detailed'[Role for which interviewed])
+            )
+        )
+    ),
+    [Count], DESC
+)
+```
+
+## Performance Metrics
+
+```DAX
+// Opportunity Density
+Opportunity Density = 
+DIVIDE([Total Opportunities], [Total Candidates], 0)
+
+// Data Quality Indicator
+Data Quality = 
+IF([Total Opportunities] > 0, "High", "Low")
+
+// Rejection Breakdown - Screen
+Screen Reject Breakdown = 
+[Screen Reject Count]
+
+// Rejection Breakdown - Tech  
+Tech Reject Breakdown = 
+[Tech Reject Count]
+
+// Rejection Breakdown - Total
+Total Rejection Breakdown = 
+[Total Rejections]
+```
+
+## Conditional Formatting Measures
+
+```DAX
+// Opportunity Count Color (for conditional formatting)
+Opportunity Count Color = 
+SWITCH(
+    TRUE(),
+    [Total Opportunities] >= 100, "Green",
+    [Total Opportunities] >= 50, "Yellow", 
+    "Red"
+)
+
+// Rejection Rate Color (for conditional formatting)
+Rejection Rate Color = 
+SWITCH(
+    TRUE(),
+    [Rejection Rate] <= 10, "Green",
+    [Rejection Rate] <= 25, "Yellow",
+    "Red"
+)
+
+// Success Rate Color (for conditional formatting)
+Success Rate Color = 
+SWITCH(
+    TRUE(),
+    [Success Rate] >= 90, "Green",
+    [Success Rate] >= 75, "Yellow",
+    "Red"
+)
+```
+
+## Time Intelligence (if date columns exist)
+
+```DAX
+// Rejections This Month
+Rejections This Month = 
+CALCULATE(
+    [Total Rejections],
+    MONTH('Screen_Reject'[Date]) = MONTH(TODAY()),
+    YEAR('Screen_Reject'[Date]) = YEAR(TODAY())
+)
+
+// Rejections Last Month
+Rejections Last Month = 
+CALCULATE(
+    [Total Rejections],
+    MONTH('Screen_Reject'[Date]) = MONTH(TODAY()) - 1,
+    YEAR('Screen_Reject'[Date]) = YEAR(TODAY())
+)
+
+// Month over Month Change
+MoM Rejection Change = 
+DIVIDE(
+    [Rejections This Month] - [Rejections Last Month],
+    [Rejections Last Month],
+    0
+) * 100
+```
+
+## Advanced Analytics
+
+```DAX
+// Candidate Performance Score
+Candidate Performance Score = 
+DIVIDE(
+    [Total Opportunities] - [Total Rejections],
+    [Total Opportunities],
+    0
+) * 100
+
+// Rejection Trend (if time series data available)
+Rejection Trend = 
+VAR CurrentPeriod = [Total Rejections]
+VAR PreviousPeriod = 
+    CALCULATE(
+        [Total Rejections],
+        DATEADD('Date'[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentPeriod - PreviousPeriod, PreviousPeriod, 0) * 100
+
+// Top Performing Candidates
+Top Performing Candidates = 
+TOPN(5,
+    ADDCOLUMNS(
+        'GroupOutput',
+        "Performance", 
+        DIVIDE([Row Count] - 
+            CALCULATE(
+                [Total Rejections],
+                'GroupOutput'[Candidate GGID] = EARLIER('GroupOutput'[Candidate GGID])
+            ),
+            [Row Count],
+            0
+        ) * 100
+    ),
+    [Performance], DESC
+)
+```
+
+## Data Quality Measures
+
+```DAX
+// Data Completeness
+Data Completeness = 
+DIVIDE(
+    COUNTROWS(
+        FILTER(
+            'GroupOutput',
+            NOT(ISBLANK('GroupOutput'[Candidate Name])) &&
+            NOT(ISBLANK('GroupOutput'[Candidate GGID])) &&
+            'GroupOutput'[Row Count] > 0
+        )
+    ),
+    [Total Candidates],
+    0
+) * 100
+
+// Missing Data Count
+Missing Data Count = 
+[Total Candidates] - 
+COUNTROWS(
+    FILTER(
+        'GroupOutput',
+        NOT(ISBLANK('GroupOutput'[Candidate Name])) &&
+        NOT(ISBLANK('GroupOutput'[Candidate GGID])) &&
+        'GroupOutput'[Row Count] > 0
+    )
+)
+```
+
+## KPI Measures
+
+```DAX
+// KPI: Target Rejection Rate (adjust as needed)
+Target Rejection Rate = 15
+
+// KPI: Actual vs Target
+Rejection Rate vs Target = 
+[Rejection Rate] - [Target Rejection Rate]
+
+// KPI: Target Opportunities per Candidate
+Target Opportunities Per Candidate = 5
+
+// KPI: Actual vs Target Opportunities
+Opportunities vs Target = 
+[Avg Opportunities Per Candidate] - [Target Opportunities Per Candidate]
+
+// KPI Status
+Rejection Rate Status = 
+IF(
+    [Rejection Rate] <= [Target Rejection Rate],
+    "Good",
+    "Needs Improvement"
+)
+
+Opportunities Status = 
+IF(
+    [Avg Opportunities Per Candidate] >= [Target Opportunities Per Candidate],
+    "Good", 
+    "Needs Improvement"
+)
+```
+
+## Usage Instructions
+
+1. **Copy each measure** into Power BI Desktop
+2. **Replace table names** with your actual table names
+3. **Adjust column names** to match your data structure
+4. **Test measures** with sample data
+5. **Apply conditional formatting** using the color measures
+6. **Create visuals** using these measures as data fields
+
+## Notes
+
+- Replace `'Screen_Reject'`, `'Tech_Reject'`, `'GroupOutput'`, and `'GroupOutput_Detailed'` with your actual table names
+- Adjust column names like `'Role for which interviewed'`, `'Candidate Name'`, `'Candidate GGID'`, `'Row Count'` to match your data
+- Add error handling with `IFERROR()` if needed
+- Consider performance implications for large datasets
+- Use `DIVIDE()` instead of `/` to handle division by zero

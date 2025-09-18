@@ -1,0 +1,363 @@
+{
+  "dashboard_configuration": {
+    "page_settings": {
+      "page_name": "Feedback Dashboard",
+      "page_size": "16:9",
+      "background_color": "#f8fafc",
+      "theme": "Custom"
+    },
+    "color_palette": {
+      "primary": "#3b82f6",
+      "success": "#10b981", 
+      "warning": "#f59e0b",
+      "danger": "#ef4444",
+      "info": "#8b5cf6",
+      "background": "#f8fafc",
+      "text_primary": "#1e293b",
+      "text_secondary": "#64748b",
+      "border": "#e2e8f0"
+    },
+    "typography": {
+      "header_font": "Segoe UI Bold",
+      "body_font": "Segoe UI",
+      "header_size": "18px",
+      "body_size": "14px",
+      "number_size": "20px"
+    }
+  },
+  "visual_configurations": {
+    "insight_cards": {
+      "card_1_screen_rejects": {
+        "visual_type": "Card",
+        "data_field": "Screen Reject Count",
+        "title": "Screen Rejects",
+        "subtitle": "Screen Reject % + '% of total'",
+        "icon": "🚫",
+        "formatting": {
+          "background_color": "#fef2f2",
+          "border_left": "4px solid #ef4444",
+          "border_radius": "8px",
+          "box_shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "padding": "16px",
+          "text_color": "#1e293b"
+        }
+      },
+      "card_2_tech_rejects": {
+        "visual_type": "Card",
+        "data_field": "Tech Reject Count", 
+        "title": "Technical Rejects",
+        "subtitle": "Tech Reject % + '% of total'",
+        "icon": "⚙️",
+        "formatting": {
+          "background_color": "#fffbeb",
+          "border_left": "4px solid #f59e0b",
+          "border_radius": "8px",
+          "box_shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "padding": "16px",
+          "text_color": "#1e293b"
+        }
+      },
+      "card_3_avg_opportunities": {
+        "visual_type": "Card",
+        "data_field": "Avg Opportunities Per Candidate",
+        "title": "Avg Opportunities/Candidate", 
+        "subtitle": "Per candidate average",
+        "icon": "📈",
+        "formatting": {
+          "background_color": "#f0fdf4",
+          "border_left": "4px solid #10b981",
+          "border_radius": "8px",
+          "box_shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "padding": "16px",
+          "text_color": "#1e293b"
+        }
+      },
+      "card_4_rejection_rate": {
+        "visual_type": "Card",
+        "data_field": "Rejection Rate",
+        "title": "Rejection Rate",
+        "subtitle": "Total Rejections + ' total rejections'",
+        "icon": "⚠️",
+        "formatting": {
+          "background_color": "#fffbeb",
+          "border_left": "4px solid #f59e0b",
+          "border_radius": "8px",
+          "box_shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "padding": "16px",
+          "text_color": "#1e293b"
+        }
+      },
+      "card_5_top_role": {
+        "visual_type": "Card",
+        "data_field": "Top Interviewed Role",
+        "title": "Top Interviewed Role",
+        "subtitle": "Most interviewed role",
+        "icon": "🎯",
+        "formatting": {
+          "background_color": "#faf5ff",
+          "border_left": "4px solid #8b5cf6",
+          "border_radius": "8px",
+          "box_shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "padding": "16px",
+          "text_color": "#1e293b"
+        }
+      }
+    },
+    "data_table": {
+      "visual_type": "Table",
+      "columns": [
+        {
+          "field": "Candidate GGID",
+          "width": "120px",
+          "text_align": "left"
+        },
+        {
+          "field": "Candidate Name", 
+          "width": "200px",
+          "text_align": "left"
+        },
+        {
+          "field": "Row Count",
+          "display_name": "No of Opportunities",
+          "width": "150px",
+          "text_align": "center",
+          "conditional_formatting": {
+            "type": "data_bars",
+            "color_scale": {
+              "min_color": "#fee2e2",
+              "max_color": "#dc2626"
+            }
+          }
+        }
+      ],
+      "formatting": {
+        "header_background": "#f8fafc",
+        "header_text_color": "#374151",
+        "header_font_weight": "600",
+        "row_alternating": true,
+        "row_hover": "#f1f5f9",
+        "border": "1px solid #e5e7eb",
+        "border_radius": "8px"
+      },
+      "pagination": {
+        "enabled": true,
+        "page_size_options": [5, 10, 25, 50],
+        "default_page_size": 10
+      }
+    },
+    "analytics_cards": {
+      "rejection_breakdown": {
+        "visual_type": "Card",
+        "title": "Rejection Breakdown",
+        "items": [
+          {
+            "label": "Screen Rejects",
+            "value": "Screen Reject Count",
+            "color": "#ef4444"
+          },
+          {
+            "label": "Technical Rejects", 
+            "value": "Tech Reject Count",
+            "color": "#f59e0b"
+          },
+          {
+            "label": "Total Rejections",
+            "value": "Total Rejections",
+            "color": "#374151",
+            "highlight": true
+          }
+        ],
+        "formatting": {
+          "background_color": "#ffffff",
+          "border": "1px solid #e2e8f0",
+          "border_radius": "8px",
+          "padding": "16px",
+          "box_shadow": "0 1px 4px rgba(0,0,0,0.04)"
+        }
+      },
+      "top_roles": {
+        "visual_type": "Card",
+        "title": "Top Interviewed Roles",
+        "data_source": "Top 3 Roles",
+        "formatting": {
+          "background_color": "#ffffff",
+          "border": "1px solid #e2e8f0", 
+          "border_radius": "8px",
+          "padding": "16px",
+          "box_shadow": "0 1px 4px rgba(0,0,0,0.04)"
+        }
+      },
+      "performance_metrics": {
+        "visual_type": "Card",
+        "title": "Performance Metrics",
+        "items": [
+          {
+            "label": "Success Rate",
+            "value": "Success Rate",
+            "color": "#10b981",
+            "suffix": "%"
+          },
+          {
+            "label": "Opportunity Density",
+            "value": "Opportunity Density", 
+            "color": "#3b82f6",
+            "decimal_places": 2
+          },
+          {
+            "label": "Data Quality",
+            "value": "Data Quality",
+            "color": "#8b5cf6"
+          }
+        ],
+        "formatting": {
+          "background_color": "#ffffff",
+          "border": "1px solid #e2e8f0",
+          "border_radius": "8px", 
+          "padding": "16px",
+          "box_shadow": "0 1px 4px rgba(0,0,0,0.04)"
+        }
+      }
+    }
+  },
+  "interactive_features": {
+    "drillthrough": {
+      "enabled": true,
+      "pages": [
+        {
+          "name": "Screen Reject Details",
+          "source_visual": "Screen Rejects Card",
+          "target_page": "Screen Reject Details",
+          "filters": ["Date", "Reason", "Candidate"]
+        },
+        {
+          "name": "Tech Reject Details", 
+          "source_visual": "Technical Rejects Card",
+          "target_page": "Tech Reject Details",
+          "filters": ["Skill", "Rating", "Candidate"]
+        },
+        {
+          "name": "Opportunity Details",
+          "source_visual": "Opportunities Table",
+          "target_page": "Opportunity Details", 
+          "filters": ["Role", "Candidate", "Status"]
+        }
+      ]
+    },
+    "filters": {
+      "date_range": {
+        "enabled": true,
+        "visual_type": "Slicer",
+        "field": "Date",
+        "type": "Between"
+      },
+      "role_filter": {
+        "enabled": true,
+        "visual_type": "Slicer", 
+        "field": "Role for which interviewed",
+        "type": "List"
+      },
+      "candidate_status": {
+        "enabled": true,
+        "visual_type": "Slicer",
+        "field": "Status",
+        "type": "List"
+      }
+    },
+    "bookmarks": {
+      "enabled": true,
+      "bookmarks": [
+        {
+          "name": "Overview",
+          "description": "Main dashboard view"
+        },
+        {
+          "name": "Detailed Analysis",
+          "description": "Expanded analytics view"
+        },
+        {
+          "name": "Mobile View",
+          "description": "Optimized for mobile devices"
+        }
+      ]
+    }
+  },
+  "responsive_design": {
+    "breakpoints": {
+      "mobile": {
+        "max_width": "768px",
+        "card_layout": "vertical",
+        "table_columns": "reduced",
+        "font_sizes": {
+          "header": "16px",
+          "body": "12px",
+          "numbers": "18px"
+        }
+      },
+      "tablet": {
+        "max_width": "1024px",
+        "card_layout": "2x3",
+        "table_columns": "standard",
+        "font_sizes": {
+          "header": "18px", 
+          "body": "14px",
+          "numbers": "20px"
+        }
+      },
+      "desktop": {
+        "min_width": "1025px",
+        "card_layout": "horizontal",
+        "table_columns": "full",
+        "font_sizes": {
+          "header": "20px",
+          "body": "14px", 
+          "numbers": "24px"
+        }
+      }
+    }
+  },
+  "performance_optimization": {
+    "data_model": {
+      "aggregations": {
+        "enabled": true,
+        "tables": ["GroupOutput", "Screen_Reject", "Tech_Reject"]
+      },
+      "relationships": [
+        {
+          "from_table": "GroupOutput",
+          "to_table": "GroupOutput_Detailed",
+          "from_column": "Candidate GGID",
+          "to_column": "Candidate GGID",
+          "type": "One to Many"
+        }
+      ]
+    },
+    "visual_optimization": {
+      "max_visuals_per_page": 15,
+      "data_reduction": "Top N",
+      "cross_filtering": "enabled",
+      "drill_through": "enabled"
+    }
+  },
+  "deployment_settings": {
+    "workspace": {
+      "name": "Feedback Dashboard Workspace",
+      "permissions": ["Viewer", "Contributor", "Admin"],
+      "sharing": {
+        "app_workspace": true,
+        "publish_to_web": false,
+        "embed_in_sharepoint": true
+      }
+    },
+    "refresh_schedule": {
+      "frequency": "Daily",
+      "time": "06:00 AM",
+      "timezone": "UTC",
+      "retry_count": 3
+    },
+    "security": {
+      "row_level_security": false,
+      "data_classification": "Internal",
+      "audit_logging": true
+    }
+  }
+}
